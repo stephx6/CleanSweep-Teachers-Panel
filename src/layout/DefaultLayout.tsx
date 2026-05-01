@@ -2,7 +2,7 @@ import type { LayoutProps } from "../types/types";
 import Header from "../components/shared/Header";
 import Aside from "../components/shared/Aside";
 import { useState } from "react";
-import { Bars3Icon } from "@heroicons/react/24/outline";
+
 
 export default function DefaultLayout({ children }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
