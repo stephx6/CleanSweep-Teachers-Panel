@@ -4,13 +4,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   
-
   const navigate = useNavigate();
 
-
-export default function Dashboard() {
-    
-  
   return (
     <>
       <DefaultLayout>Dashboard</DefaultLayout>
