@@ -71,8 +71,8 @@ export default function LoginForm() {
               type="email"
               placeholder="teacher@school.edu"
               leftIcon={<EnvelopeIcon className="w-5 h-5" />}
-              size="lg"
-              fullWidth
+              size="md"
+              fullWidth={true}
               onChange={(e) => setEmail(e.target.value)}
               value={email}
             />
@@ -82,8 +82,8 @@ export default function LoginForm() {
               placeholder="Enter your password"
               leftIcon={<LockClosedIcon className="w-5 h-5" />}
               showPasswordToggle
-              size="lg"
-              fullWidth
+              size="md"
+              fullWidth={true} // Added fullWidth
               onChange={(e) => setPassword(e.target.value)}
               value={password}
             />
