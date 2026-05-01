@@ -43,3 +43,9 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export interface HeaderProps {
   onMenuClick?: () => void;
 }
+
+export interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}
