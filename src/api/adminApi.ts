@@ -1,6 +1,7 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../FirebaseConfig";
 import { getAuth } from "firebase/auth";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 export const getCurrentAdmin = async () => {
   const auth = getAuth();
@@ -26,4 +27,15 @@ export const getAdminName = async () => {
   return {
     username: data.name as string,
   };
+};
+
+export const getAllPlayers = async () => {
+  const q = query(collection(db, "PlayerData"), where("role", "==", "player"));
+
+  const querySnapshot = await getDocs(q);
+
+  return querySnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
 };

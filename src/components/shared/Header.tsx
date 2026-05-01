@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { logOutUser } from "../../features/auth/auth.service";
 import { Bars3Icon } from "@heroicons/react/24/outline";
 import type { HeaderProps } from '../../types/types';
-import useAdmin from "../../hooks/useAdmin";
+import {useAdmin} from "../../hooks/useAdmin";
 
 
 export default function Header({ onMenuClick }: HeaderProps) {
