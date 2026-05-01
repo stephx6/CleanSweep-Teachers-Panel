@@ -1,6 +1,6 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../FirebaseConfig";
-
+import { getAuth } from "firebase/auth";
 
 export const getCurrentAdmin = async () => {
   const auth = getAuth();
