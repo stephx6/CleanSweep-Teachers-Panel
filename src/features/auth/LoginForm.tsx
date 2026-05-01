@@ -10,34 +10,25 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function LoginForm() {
-  
-    const navigate = useNavigate();
-
+  const navigate = useNavigate();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const { login, loading, error } = useLogin();
 
-
-  const { login } = useLogin();
-
-  const handleLogin = async (e: any) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    try{
-        await login(email, password);
-        navigate("/dashboard");
-    }catch(err){
-        console.log(err)
+    try {
+      await login(email, password);
+      navigate("/dashboard");
+    } catch {
+      // error is already set in useLogin
     }
-  
   };
-
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F0FDF4] py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
-        {/* Main Form Card */}
         <form
-          action=""
           className="bg-[#FFFFFF] rounded-2xl shadow-xl px-8 py-10 space-y-6 border border-[#BBF7D0]"
           onSubmit={handleLogin}
         >
@@ -60,15 +51,20 @@ export default function LoginForm() {
                 </svg>
               </div>
             </div>
-
             <h1 className="text-2xl font-bold bg-linear-to-r from-[#14532D] to-[#16A34A] bg-clip-text text-transparent">
               Welcome to Cleansweep
             </h1>
-
             <p className="text-sm text-[#166534] font-medium">Teachers Panel</p>
           </div>
 
-          {/* Form Fields - Added fullWidth to both inputs */}
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3">
+              {error}
+            </div>
+          )}
+
+          {/* Form Fields */}
           <div className="space-y-5">
             <Input
               label="Email Address"
@@ -80,7 +76,6 @@ export default function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               value={email}
             />
-
             <Input
               label="Password"
               type="password"
@@ -110,9 +105,9 @@ export default function LoginForm() {
             size="lg"
             fullWidth
             rightIcon={<ArrowRightIcon className="w-4 h-4" />}
-            onClick={handleLogin}
+            disabled={loading}
           >
-            Log In
+            {loading ? "Logging in..." : "Log In"}
           </Button>
         </form>
       </div>

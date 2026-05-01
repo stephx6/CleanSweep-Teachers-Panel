@@ -40,3 +40,6 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   rightIcon?: React.ReactNode;
 }
 
+export interface HeaderProps {
+  onMenuClick?: () => void;
+}

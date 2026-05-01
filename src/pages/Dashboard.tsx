@@ -7,17 +7,13 @@ export default function Dashboard() {
 
   const navigate = useNavigate();
 
-  const handleLogOut = async () => {
-    await logOutUser();
-    navigate("/");
-  };
 
+export default function Dashboard() {
+    
+  
   return (
     <>
-      <Button variant="secondary" onClick={handleLogOut}>
-        LOG OUT
-      </Button>
-     Wala pa
+      <DefaultLayout>Dashboard</DefaultLayout>
     </>
   );
 }
