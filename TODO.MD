@@ -1,0 +1,1 @@
+[x] - Fix fetching username from firebase always return no document found!
