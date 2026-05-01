@@ -4,7 +4,7 @@ import Card from "../ui/Card";
 export default function StatCard() {
   const { totalPlayers, loading } = usePlayerTotalLength();
 
-  if (loading) return <p>Nigga loading</p>;
+  if (loading) return <p>loading</p>;
 
   return (
     <>
