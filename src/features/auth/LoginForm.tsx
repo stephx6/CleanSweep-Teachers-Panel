@@ -71,8 +71,8 @@ export default function LoginForm() {
               type="email"
               placeholder="teacher@school.edu"
               leftIcon={<EnvelopeIcon className="w-5 h-5" />}
-              size="lg"
-              fullWidth
+              size="md"
+              fullWidth={true}
               onChange={(e) => setEmail(e.target.value)}
               value={email}
             />
@@ -82,24 +82,17 @@ export default function LoginForm() {
               placeholder="Enter your password"
               leftIcon={<LockClosedIcon className="w-5 h-5" />}
               showPasswordToggle
-              size="lg"
-              fullWidth
+              size="md"
+              fullWidth={true} // Added fullWidth
               onChange={(e) => setPassword(e.target.value)}
               value={password}
             />
           </div>
 
           {/* Remember Me & Forgot Password */}
-          <div className="flex items-center justify-between">
-            <label className="flex items-center space-x-2 cursor-pointer group">
-              <input
-                type="checkbox"
-                className="w-4 h-4 text-[#16A34A] rounded border-gray-300 focus:ring-[#4ADE80] focus:ring-2 cursor-pointer"
-              />
-              <span className="text-sm text-[#14532D] group-hover:text-[#16A34A] transition-colors">
-                Remember me
-              </span>
-            </label>
+          <div className="flex items-center justify-end">
+          
+
             <Button variant="ghost" size="sm" className="text-sm font-medium">
               Forgot password?
             </Button>
