@@ -41,3 +41,11 @@ export interface AnalyticsData {
   averageScore: number;
   gamesPerDay: Array<{ day: string; count: number }>;
 }
+
+export interface ClassroomCode {
+  id: string;
+  code: string;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+}
