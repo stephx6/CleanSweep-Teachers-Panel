@@ -9,14 +9,12 @@ import {
   deleteCode,
 } from "../../api/adminApi";
 import { useState, useEffect } from "react";
-
-interface ClassroomCode {
-  id: string;
-  code: string;
-  isActive: boolean;
-  createdBy: string;
-  createdAt: string;
-}
+import type { ClassroomCode } from "../../types/dashboardTypes";
+import {
+  formatDate,
+  filterCodes,
+  copyToClipboard,
+} from "../../helpers/roomCodeHelper";
 
 export default function RoomCode() {
   const [generatedCode, setGeneratedCode] = useState("");
@@ -47,14 +45,14 @@ export default function RoomCode() {
     try {
       const code = await createClassroomCode();
       setGeneratedCode(code);
-      await fetchCodes(); // Refresh the list
+      await fetchCodes();
     } catch (err) {
       console.error(err);
     }
   };
 
   const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
+    copyToClipboard(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
   };
@@ -62,7 +60,7 @@ export default function RoomCode() {
   const handleDisableCode = async (id: string, currentStatus: boolean) => {
     try {
       await updateCodeStatus(id, !currentStatus);
-      await fetchCodes(); // Refresh the list
+      await fetchCodes();
     } catch (err) {
       console.error("Error updating code status:", err);
     }
@@ -74,53 +72,14 @@ export default function RoomCode() {
     ) {
       try {
         await deleteCode(id);
-        await fetchCodes(); // Refresh the list
+        await fetchCodes();
       } catch (err) {
         console.error("Error deleting code:", err);
       }
     }
   };
 
-  const formatDate = (timestamp: any) => {
-    if (!timestamp) return "Date not available";
-
-    try {
-      // Handle Firestore Timestamp
-      if (timestamp?.toDate) {
-        const date = timestamp.toDate();
-        return date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-      }
-
-      // Handle regular date string or number
-      const date = new Date(timestamp);
-      if (isNaN(date.getTime())) return "Invalid date";
-
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (error) {
-      return "Date error";
-    }
-  };
-
-  // Filter codes based on search and active status
-  const filteredCodes = codes.filter((code) => {
-    const matchesSearch =
-      code.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      code.createdBy.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = showActiveOnly ? code.isActive : true;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredCodes = filterCodes(codes, searchTerm, showActiveOnly);
 
   // Loading Skeleton
   const LoadingSkeleton = () => (
@@ -281,7 +240,6 @@ export default function RoomCode() {
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#64748B]">
                       <span>Created by: {code.createdBy}</span>
-                      
                       <span>Created: {formatDate(code.createdAt)}</span>
                     </div>
                   </div>

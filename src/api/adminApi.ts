@@ -13,6 +13,7 @@ import {
 import { db } from "../FirebaseConfig";
 import { getAuth } from "firebase/auth";
 import {} from "firebase/firestore";
+import type { ClassroomCode } from "../types/dashboardTypes";
 
 // Collections
 
@@ -58,13 +59,7 @@ export const getAllPlayers = async () => {
   }));
 };
 
-export interface ClassroomCode {
-  id: string;
-  code: string;
-  isActive: boolean;
-  createdBy: string;
-  createdAt: string;
-}
+
 
 // Generate a random classroom code
 const generateRandomCode = (): string => {
