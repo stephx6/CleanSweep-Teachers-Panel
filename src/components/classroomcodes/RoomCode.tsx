@@ -254,7 +254,7 @@ export default function RoomCode() {
                       Copy
                     </Button>
 
-                    {code.isActive && (
+                    {code.isActive ? (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -264,6 +264,17 @@ export default function RoomCode() {
                         className="text-yellow-600 hover:bg-yellow-50"
                       >
                         Disable
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          handleDisableCode(code.id, code.isActive)
+                        }
+                        className="text-green-600 hover:bg-green-50"
+                      >
+                        Enable
                       </Button>
                     )}
 

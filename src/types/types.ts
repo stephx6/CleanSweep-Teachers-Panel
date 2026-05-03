@@ -49,3 +49,10 @@ export interface CardProps {
   className?: string;
   onClick?: () => void;
 }
+
+export interface CardWithSkeletonProps extends CardProps {
+  isLoading?: boolean;
+  skeletonHeight?: string;
+  skeletonWidth?: string;
+  fullWidth?: boolean;
+}

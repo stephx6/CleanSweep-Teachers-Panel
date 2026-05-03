@@ -2,13 +2,16 @@ import type { LayoutProps } from "../types/types";
 import Header from "../components/shared/Header";
 import Aside from "../components/shared/Aside";
 import { useState } from "react";
-
+import ScrollToTop from "../helpers/ScrollToTop";
 
 export default function DefaultLayout({ children }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  
+  
   return (
     <div className="min-h-screen bg-[#F0FDF4]">
+      <ScrollToTop/>
       {/* Fixed Header */}
       <Header onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
 
