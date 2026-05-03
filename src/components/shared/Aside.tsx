@@ -5,8 +5,10 @@ import {
   UserCircleIcon,
   UsersIcon,
   XMarkIcon,
+  PencilIcon,
 } from "@heroicons/react/24/outline";
-import { useLocation , useNavigate } from "react-router-dom";
+
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface AsideProps {
   onClose?: () => void;
@@ -20,8 +22,6 @@ export default function Aside({ onClose }: AsideProps) {
   };
 
   const navigate = useNavigate();
-
-
 
   return (
     <aside className="bg-[#FFFFFF] border-r border-[#BBF7D0] w-64 h-full shadow-sm flex flex-col fixed">
@@ -40,10 +40,35 @@ export default function Aside({ onClose }: AsideProps) {
               className="w-full justify-start"
               leftIcon={<HomeIcon className="w-5 h-5" />}
               onClick={() => {
-                navigate("/dashboard")
+                navigate("/dashboard");
               }}
             >
               Home
+            </Button>
+          </li>
+          <li>
+            <Button
+              variant={isActive("/dashboard/classroom-codes") ? "primary" : "ghost"}
+              className="w-full justify-start"
+              leftIcon={<PencilIcon className="w-5 h-5" />}
+              onClick={() => {
+                navigate("/dashboard/classroom-codes");
+              }}
+            >
+              Classroom Codes
+            </Button>
+          </li>
+
+          <li>
+            <Button
+              variant={isActive("/dashboard/students") ? "primary" : "ghost"}
+              className="w-full justify-start"
+              leftIcon={<UsersIcon className="w-5 h-5" />}
+              onClick={() => {
+                navigate("/dashboard/students");
+              }}
+            >
+              Student List
             </Button>
           </li>
           <li>
@@ -52,22 +77,10 @@ export default function Aside({ onClose }: AsideProps) {
               className="w-full justify-start"
               leftIcon={<UserCircleIcon className="w-5 h-5" />}
               onClick={() => {
-                navigate("/dashboard/profile")
+                navigate("/dashboard/profile");
               }}
             >
               Edit Profile
-            </Button>
-          </li>
-          <li>
-            <Button
-              variant={isActive("/dashboard/students") ? "primary" : "ghost"}
-              className="w-full justify-start"
-              leftIcon={<UsersIcon className="w-5 h-5" />}
-              onClick={() => {
-                navigate("/dashboard/students")
-              }}
-            >
-              Student List
             </Button>
           </li>
         </ul>
