@@ -1,4 +1,4 @@
-import type { CardProps, CardWithSkeletonProps } from "../../types/types";
+import type {  CardWithSkeletonProps } from "../../types/types";
 
 export default function Card({
   children,
