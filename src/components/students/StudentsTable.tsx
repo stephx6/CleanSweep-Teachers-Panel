@@ -117,6 +117,9 @@ export default function StudentsTable() {
                     User ID
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
+                    Envirocoins
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
                     Actions
                   </th>
                 </tr>
@@ -132,6 +135,14 @@ export default function StudentsTable() {
                     </td>
                     <td className="py-3 px-4 font-mono text-sm text-[#64748B]">
                       {player.id || "N/A"}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-1">
+                        <span className="text-yellow-500"></span>
+                        <span className="font-semibold text-[#0F172A]">
+                          {player.envirocoins || 0}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <Button variant="ghost" size="sm">
@@ -159,6 +170,12 @@ export default function StudentsTable() {
                     <p className="text-xs font-mono text-[#64748B] mt-1">
                       ID: {player.id || "N/A"}
                     </p>
+                    <div className="flex items-center gap-1 mt-2">
+                      <span className="text-yellow-500 text-sm">🪙</span>
+                      <span className="text-sm font-medium text-[#0F172A]">
+                        {player.envirocoins || 0} Envirocoins
+                      </span>
+                    </div>
                   </div>
                   <Button variant="ghost" size="sm">
                     View
