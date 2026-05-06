@@ -56,3 +56,16 @@ export interface CardWithSkeletonProps extends CardProps {
   skeletonWidth?: string;
   fullWidth?: boolean;
 }
+
+export interface Player {
+  id : string; 
+  username : string;
+  totalTrashSegregated : number | null;
+  envirocoins : number;
+}
+
+export interface PopUpModalProps {
+  player : Player | null;
+  isOpen : boolean;
+  onClose : () => void;
+}

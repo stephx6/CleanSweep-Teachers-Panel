@@ -3,13 +3,14 @@ import Card from "../ui/Card";
 import Button from "../ui/Button";
 import Input from "../ui/InputField";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import PopUpModal from "../ui/PopUpModal";
 import { useState } from "react";
 
 export default function StudentsTable() {
   const { totalPlayers, loading } = usePlayerTotalLength();
   const [searchTerm, setSearchTerm] = useState("");
-
-  console.log(totalPlayers);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  
 
   // Filter players based on search term
   const filteredPlayers = totalPlayers?.filter(
@@ -117,6 +118,9 @@ export default function StudentsTable() {
                     User ID
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
+                    Total Segregated Trash
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
                     Envirocoins
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
@@ -136,6 +140,9 @@ export default function StudentsTable() {
                     <td className="py-3 px-4 font-mono text-sm text-[#64748B]">
                       {player.id || "N/A"}
                     </td>
+                    <td className="py-3 px-4 font-mono text-sm text-[#64748B]">
+                      {player.totalTrashSegregated || "N/A"}
+                    </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
                         <span className="text-yellow-500"></span>
@@ -145,7 +152,11 @@ export default function StudentsTable() {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedPlayer(player)}
+                      >
                         View
                       </Button>
                     </td>
@@ -177,7 +188,11 @@ export default function StudentsTable() {
                       </span>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedPlayer(player)} // ← this was missing
+                  >
                     View
                   </Button>
                 </div>
@@ -186,7 +201,13 @@ export default function StudentsTable() {
           </div>
         </div>
       )}
-
+      {selectedPlayer && (
+        <PopUpModal
+          player={selectedPlayer}
+          onClose={() => setSelectedPlayer(null)}
+          isOpen={!!selectedPlayer}
+        />
+      )}
       {/* Footer */}
       {!loading && filteredPlayers && filteredPlayers.length > 0 && (
         <div className="mt-4 pt-4 border-t border-[#BBF7D0] text-center">
