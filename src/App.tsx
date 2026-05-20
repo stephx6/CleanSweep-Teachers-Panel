@@ -1,6 +1,5 @@
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
 import Students from "./pages/Students";
 import ClassroomCodes from "./pages/ClassroomCodes";
 import ProtectedRoute from "./protection/ProtectedRoute";
@@ -22,14 +21,7 @@ function App() {
             }
           ></Route>
 
-          <Route
-            path="/dashboard/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          ></Route>
+        
 
           <Route
             path="/dashboard/students"

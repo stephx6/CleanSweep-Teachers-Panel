@@ -2,7 +2,7 @@
 import Button from "../ui/Button";
 import {
   HomeIcon,
-  UserCircleIcon,
+  
   UsersIcon,
   XMarkIcon,
   PencilIcon,
@@ -71,18 +71,7 @@ export default function Aside({ onClose }: AsideProps) {
               Student List
             </Button>
           </li>
-          <li>
-            <Button
-              variant={isActive("/dashboard/profile") ? "primary" : "ghost"}
-              className="w-full justify-start"
-              leftIcon={<UserCircleIcon className="w-5 h-5" />}
-              onClick={() => {
-                navigate("/dashboard/profile");
-              }}
-            >
-              Edit Profile
-            </Button>
-          </li>
+         
         </ul>
       </nav>
     </aside>
