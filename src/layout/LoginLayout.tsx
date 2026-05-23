@@ -1,12 +1,10 @@
-import type { LayoutProps } from "../types/types";
+import type { ReactChildProps } from "../types/types";
 
-export default function LoginLayout({ children }: LayoutProps) {
+export default function LoginLayout({ children }: ReactChildProps) {
   return (
     <>
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-        
-          {children}
-      
+        {children}
       </div>
     </>
   );

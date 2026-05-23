@@ -1,7 +1,7 @@
 // types/types.ts
 import React from "react";
 
-export type LayoutProps = {
+export type ReactChildProps = {
   children: React.ReactNode;
 };
 
@@ -57,15 +57,3 @@ export interface CardWithSkeletonProps extends CardProps {
   fullWidth?: boolean;
 }
 
-export interface Player {
-  id : string; 
-  username : string;
-  totalTrashSegregated : number | null;
-  envirocoins : number;
-}
-
-export interface PopUpModalProps {
-  player : Player | null;
-  isOpen : boolean;
-  onClose : () => void;
-}
