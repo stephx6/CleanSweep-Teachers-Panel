@@ -2,7 +2,7 @@
 import Button from "../ui/Button";
 import {
   HomeIcon,
-  
+  BookOpenIcon,
   UsersIcon,
   XMarkIcon,
   PencilIcon,
@@ -48,7 +48,9 @@ export default function Aside({ onClose }: AsideProps) {
           </li>
           <li>
             <Button
-              variant={isActive("/dashboard/classroom-codes") ? "primary" : "ghost"}
+              variant={
+                isActive("/dashboard/classroom-codes") ? "primary" : "ghost"
+              }
               className="w-full justify-start"
               leftIcon={<PencilIcon className="w-5 h-5" />}
               onClick={() => {
@@ -71,7 +73,19 @@ export default function Aside({ onClose }: AsideProps) {
               Student List
             </Button>
           </li>
-         
+
+          <li>
+            <Button
+              variant={isActive("/dashboard/reports") ? "primary" : "ghost"}
+              className="w-full justify-start"
+              leftIcon={<BookOpenIcon className="w-5 h-5" />}
+              onClick={() => {
+                navigate("/dashboard/reports");
+              }}
+            >
+              Reports
+            </Button>
+          </li>
         </ul>
       </nav>
     </aside>

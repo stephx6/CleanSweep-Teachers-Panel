@@ -15,6 +15,7 @@ export default function StatCard() {
     );
   }
 
+
   return (
     <Card className="p-4">
       {totalPlayers.length === 0 ? (
