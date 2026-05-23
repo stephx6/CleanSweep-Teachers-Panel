@@ -15,6 +15,7 @@ import {
   filterCodes,
   copyToClipboard,
 } from "../../helpers/roomCodeHelper";
+import { getAuth } from "firebase/auth";
 
 export default function RoomCode() {
   const [generatedCode, setGeneratedCode] = useState("");
@@ -41,15 +42,23 @@ export default function RoomCode() {
     }
   };
 
-  const handleGenerate = async () => {
-    try {
-      const code = await createClassroomCode();
-      setGeneratedCode(code);
-      await fetchCodes();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+ const handleGenerate = async () => {
+   try {
+     const auth = getAuth();
+     const uid = auth.currentUser?.uid;
+
+     if (!uid) {
+       console.error("No logged in user");
+       return;
+     }
+
+     const code = await createClassroomCode(uid); 
+     setGeneratedCode(code);
+     await fetchCodes();
+   } catch (err) {
+     console.error(err);
+   }
+ };
 
   const handleCopyCode = (code: string) => {
     copyToClipboard(code);
