@@ -83,9 +83,10 @@ function PlayerRow({
           }`}
         >
           {sortKey === "accuracyPercentage"
-            ? `${player.accuracyPercentage}%`
+            ? `${Number(player.accuracyPercentage).toFixed(2)}%`
             : `${player.totalTrashSegregated} 🗑️`}
         </p>
+
         <p className="text-[10px] text-gray-400">
           {sortKey === "accuracyPercentage" ? "accuracy" : "segregated"}
         </p>
@@ -96,8 +97,9 @@ function PlayerRow({
         <p className="text-sm font-semibold text-gray-500">
           {sortKey === "accuracyPercentage"
             ? player.totalTrashSegregated
-            : `${player.accuracyPercentage}%`}
+            : `${Number(player.accuracyPercentage).toFixed(2)}%`}
         </p>
+
         <p className="text-[10px] text-gray-400">
           {sortKey === "accuracyPercentage" ? "🗑️ trash" : "accuracy"}
         </p>

@@ -128,7 +128,7 @@ export default function PopUpModal({
               label="🗑️ Segregated"
               value={player.totalTrashSegregated ?? 0}
             />
-            <StatChip label="🎯 Accuracy" value={`${overallPct}%`} />
+            <StatChip label="🎯 Accuracy" value={`${overallPct.toFixed(2)}%`} />
           </div>
 
           <div className="grid grid-cols-3 gap-2">

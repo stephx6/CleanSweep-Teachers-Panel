@@ -55,6 +55,7 @@ export const getAllPlayers = async () => {
   }));
 };
 
+
 export const getPlayerAnalytics = async () => {
   const q = query(
     collection(db, playerCollectionName),
@@ -64,9 +65,20 @@ export const getPlayerAnalytics = async () => {
   const querySnapshot = await getDocs(q);
   const players = querySnapshot.docs.map((doc) => doc.data());
 
+  const playerClassroom = players.filter(p => p.classroomCode !== undefined);
+  
 
-
-
+  const q2 = query(
+    collection(db , "ClassroomCodes"),
+    where("code" , "in", playerClassroom.map(e => e.classroomCode))
+  )
+  const querySnapshot2 =  await getDocs(q2);
+  const createdBy = querySnapshot2.docs.map((doc) => doc.data());
+  
+  const classroomMap = new Map(
+    createdBy.map((c) => [c.code, c.createdBy])
+  )
+    
 
   // Pre-compute shared totals
   const totalAttempts = players.reduce(
@@ -185,7 +197,8 @@ export const getPlayerAnalytics = async () => {
           (p.residualCorrect ?? 0) + (p.residualWrong ?? 0),
         ),
       },
-    classroomcode : p.classroomCode,
+      classroomcode: p.classroomCode,
+      createdBy: classroomMap.get(p.classroomCode) ?? null,
     })),
   };
 

@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { usePlayerTotalLength } from "../../hooks/usePlayer";
+import { getClassroomCodes } from "../../api/adminApi";
 import Card from "../ui/Card";
 import {
   PieChart,
@@ -17,6 +18,14 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface ClassroomCode {
+  id: string;
+  code: string;
+  createdBy: string;
+  createdAt: string;
+  isActive: boolean;
+}
+
 interface ClassStats {
   code: string;
   playerCount: number;
@@ -30,6 +39,7 @@ interface ClassStats {
   recyclableWrong: number;
   residualCorrect: number;
   residualWrong: number;
+  createdBy: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -188,7 +198,17 @@ function ClassCard({ stats }: { stats: ClassStats }) {
             <h3 className="text-xl font-black text-gray-800 font-mono tracking-wider">
               {stats.code}
             </h3>
+            <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+              <span>👤</span>
+              <span>
+                Teacher{" "}
+                <span className="font-semibold text-gray-600">
+                  {stats.createdBy}
+                </span>
+              </span>
+            </p>
           </div>
+
           <div className="flex flex-col items-center justify-center bg-emerald-500 text-white rounded-xl px-3 py-2 min-w-[56px]">
             <span className="text-2xl font-black leading-none">
               {stats.playerCount}
@@ -254,6 +274,7 @@ function SkeletonCard() {
           <div className="space-y-2">
             <div className="h-3 w-24 bg-gray-200 rounded" />
             <div className="h-6 w-32 bg-gray-200 rounded" />
+            <div className="h-3 w-28 bg-gray-100 rounded" />
           </div>
           <div className="w-14 h-14 bg-gray-200 rounded-xl" />
         </div>
@@ -294,6 +315,11 @@ function EmptyState() {
 
 export default function ClassAnalytics() {
   const { totalPlayers, loading } = usePlayerTotalLength();
+  const [classroomCodes, setClassroomCodes] = useState<ClassroomCode[]>([]);
+
+  useEffect(() => {
+    getClassroomCodes().then(setClassroomCodes);
+  }, []);
 
   // ── Group players by classroomCode and compute stats ──
   const classStats: ClassStats[] = useMemo(() => {
@@ -303,7 +329,9 @@ export default function ClassAnalytics() {
 
     totalPlayers.forEach((p) => {
       const code = p.classroomCode ?? "No Code";
+
       if (!map.has(code)) {
+        const meta = classroomCodes.find((c) => c.code === code);
         map.set(code, {
           code,
           playerCount: 0,
@@ -317,6 +345,7 @@ export default function ClassAnalytics() {
           recyclableWrong: 0,
           residualCorrect: 0,
           residualWrong: 0,
+          createdBy: meta?.createdBy ?? "Unknown",
         });
       }
 
@@ -333,7 +362,6 @@ export default function ClassAnalytics() {
       entry.residualWrong += p.residualWrong ?? 0;
     });
 
-    // Compute correctness % after aggregation
     map.forEach((entry) => {
       entry.correctnessPercentage = calcPct(
         entry.totalCorrect,
@@ -341,11 +369,10 @@ export default function ClassAnalytics() {
       );
     });
 
-    // Sort by code alphabetically
     return Array.from(map.values()).sort((a, b) =>
       a.code.localeCompare(b.code),
     );
-  }, [totalPlayers]);
+  }, [totalPlayers, classroomCodes]);
 
   return (
     <Card fullWidth className="p-6">
