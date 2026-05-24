@@ -64,6 +64,10 @@ export const getPlayerAnalytics = async () => {
   const querySnapshot = await getDocs(q);
   const players = querySnapshot.docs.map((doc) => doc.data());
 
+
+
+
+
   // Pre-compute shared totals
   const totalAttempts = players.reduce(
     (sum, p) => sum + (p.totalAttempts ?? 0),
@@ -181,6 +185,7 @@ export const getPlayerAnalytics = async () => {
           (p.residualCorrect ?? 0) + (p.residualWrong ?? 0),
         ),
       },
+    classroomcode : p.classroomCode,
     })),
   };
 

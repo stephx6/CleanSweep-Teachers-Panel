@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import PlayerAnalyticsCards from "../components/dashboard/PlayerAnalyticsCards";
 import Leaderboard from "../components/dashboard/Leaderboard";
 import TotalTrashCard from "../components/dashboard/Totaltrashcard ";
+import ClassAnalytics from "../components/dashboard/ClassAnalytics";
 
 export default function Dashboard() {
   const [analytics, setAnalytics] = useState<PlayerAnalytics | null>(null);
@@ -50,7 +51,7 @@ export default function Dashboard() {
             <StatCard />
           </div>
         </div>
-
+        <ClassAnalytics />
         {/* Row 2 — Analytics + Leaderboard side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <PlayerAnalyticsCards analytics={analytics} isLoading={isLoading} />
