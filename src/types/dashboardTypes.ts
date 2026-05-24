@@ -96,3 +96,26 @@ export interface TotalTrashCardProps {
   total: number;
   isLoading?: boolean;
 }
+
+// ─── Report Player ────────────────────────────────────────────────────────────
+
+export interface ReportPlayer {
+  username: string;
+  totalAttempts: number;
+  totalCorrect: number;
+  totalWrong: number;
+  accuracyPercentage: number;
+  totalTrashSegregated: number;
+  envirocoins: number;
+  classroomCode?: string;
+  biodegradable: BinStat;
+  recyclable: BinStat;
+  residual: BinStat;
+}
+
+export type AccuracySort = "none" | "highest" | "lowest";
+
+export interface ReportGeneratorProps {
+  analytics: PlayerAnalytics | null;
+  isLoading?: boolean;
+}

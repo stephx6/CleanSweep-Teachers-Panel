@@ -2,9 +2,13 @@ import { usePlayerTotalLength } from "../../hooks/usePlayer";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 import Input from "../ui/InputField";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import {
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import PopUpModal from "../ui/PopUpModal";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 // ─── Bin Pill ─────────────────────────────────────────────────────────────────
 
@@ -31,8 +35,7 @@ function BinPill({
       <span className="text-xs">{icon}</span>
       <span className="text-[9px] font-semibold text-gray-500 leading-tight">
         {label}
-      </span>{" "}
-      {/* 👈 added */}
+      </span>
       <span className="text-[11px] font-bold leading-tight">{pct}%</span>
       <span className="text-[9px] text-gray-400 leading-tight">
         {correct}/{total}
@@ -53,7 +56,7 @@ function AccuracyBadge({ value }: { value: number }) {
 
   return (
     <span className={`text-xs font-bold px-2 py-1 rounded-lg border ${color}`}>
-      {value}%
+      {value.toFixed(2)}%
     </span>
   );
 }
@@ -99,47 +102,189 @@ const EmptyState = () => (
       No students found
     </h3>
     <p className="text-sm text-[#64748B]">
-      Students will appear here once they join
+      Try adjusting your search or filters
     </p>
   </div>
 );
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+type SortMode = "default" | "accuracy_desc" | "accuracy_asc";
+
 export default function StudentsTable() {
   const { totalPlayers, loading } = usePlayerTotalLength();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectedCode, setSelectedCode] = useState<string>("all");
+  const [sortMode, setSortMode] = useState<SortMode>("default");
+  const [showFilters, setShowFilters] = useState(false);
 
-  const filteredPlayers = totalPlayers?.filter(
-    (player) =>
-      player.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.id?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // ── Unique classroom codes from data ──
+  const classroomCodes = useMemo(() => {
+    if (!totalPlayers) return [];
+    const codes = totalPlayers
+      .map((p) => p.classroomCode)
+      .filter(Boolean) as string[];
+    return ["all", ...Array.from(new Set(codes))];
+  }, [totalPlayers]);
+
+  // ── Filter + Sort ──
+  const filteredPlayers = useMemo(() => {
+    if (!totalPlayers) return [];
+
+    let result = totalPlayers.filter((player) => {
+      const matchesName = player.username
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesCode =
+        selectedCode === "all" || player.classroomCode === selectedCode;
+      return matchesName && matchesCode;
+    });
+
+    if (sortMode === "accuracy_desc") {
+      result = [...result].sort(
+        (a, b) => (b.accuracyPercentage ?? 0) - (a.accuracyPercentage ?? 0),
+      );
+    } else if (sortMode === "accuracy_asc") {
+      result = [...result].sort(
+        (a, b) => (a.accuracyPercentage ?? 0) - (b.accuracyPercentage ?? 0),
+      );
+    }
+    else {
+        result = [...result].sort((a, b) => {
+          const codeA = a.classroomCode ?? "";
+          const codeB = b.classroomCode ?? "";
+          return codeA.localeCompare(codeB);
+        });
+    }
+
+    return result;
+  }, [totalPlayers, searchTerm, selectedCode, sortMode]);
+
+  // ── Active filter count (for badge) ──
+  const activeFilters = [selectedCode !== "all", sortMode !== "default"].filter(
+    Boolean,
+  ).length;
+
+  const clearFilters = () => {
+    setSelectedCode("all");
+    setSortMode("default");
+  };
 
   return (
     <Card className="p-6 w-full bg-white">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div>
           <h2 className="text-xl font-bold text-[#0F172A]">Students List</h2>
           <p className="text-sm text-[#64748B] mt-1">
             Manage enrolled students
           </p>
         </div>
-        <div className="w-full sm:w-64">
-          <Input
-            placeholder="Search by username or ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            size="md"
-            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
-            fullWidth
-          />
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Search — name only */}
+          <div className="flex-1 sm:w-56">
+            <Input
+              placeholder="Search by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="md"
+              leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
+              fullWidth
+            />
+          </div>
+
+          {/* Filter toggle */}
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            className={`relative flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-semibold transition-all duration-200
+              ${
+                showFilters || activeFilters > 0
+                  ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                  : "bg-gray-50 border-gray-200 text-gray-500 hover:border-emerald-200 hover:text-emerald-600"
+              }`}
+          >
+            <FunnelIcon className="w-4 h-4" />
+            Filters
+            {activeFilters > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-emerald-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                {activeFilters}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Stats Badge */}
+      {/* ── Filter Panel ── */}
+      {showFilters && (
+        <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col sm:flex-row gap-4">
+          {/* Classroom Code Filter */}
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-gray-500 mb-2">
+              🏫 Classroom Code
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {classroomCodes.map((code) => (
+                <button
+                  key={code}
+                  onClick={() => setSelectedCode(code)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all duration-150
+                    ${
+                      selectedCode === code
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-emerald-300 hover:text-emerald-600"
+                    }`}
+                >
+                  {code === "all" ? "All Codes" : code}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sort by Accuracy */}
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-gray-500 mb-2">
+              🎯 Sort by Accuracy
+            </p>
+            <div className="flex gap-2">
+              {[
+                { value: "default", label: "Default" },
+                { value: "accuracy_desc", label: "↑ Highest" },
+                { value: "accuracy_asc", label: "↓ Lowest" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setSortMode(opt.value as SortMode)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all duration-150
+                    ${
+                      sortMode === opt.value
+                        ? "bg-emerald-500 text-white border-emerald-500"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-emerald-300 hover:text-emerald-600"
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Clear */}
+          {activeFilters > 0 && (
+            <div className="flex items-end">
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 font-semibold transition-colors"
+              >
+                <XMarkIcon className="w-3.5 h-3.5" />
+                Clear filters
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Stats Badge ── */}
       {!loading && filteredPlayers && filteredPlayers.length > 0 && (
         <div className="mb-4 flex justify-end">
           <div className="bg-[#F0FDF4] px-3 py-1 rounded-lg border border-[#BBF7D0]">
@@ -151,14 +296,14 @@ export default function StudentsTable() {
         </div>
       )}
 
-      {/* Content */}
+      {/* ── Content ── */}
       {loading ? (
         <LoadingSkeleton />
       ) : !filteredPlayers || filteredPlayers.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="w-full">
-          {/* ── Desktop Table ── */}
+          {/* Desktop Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -179,6 +324,9 @@ export default function StudentsTable() {
                     Envirocoins
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
+                    Classroom Code
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
                     Actions
                   </th>
                 </tr>
@@ -189,7 +337,6 @@ export default function StudentsTable() {
                     key={key}
                     className="border-b border-[#F0FDF4] hover:bg-[#F0FDF4] transition-colors"
                   >
-                    {/* Username */}
                     <td className="py-3 px-4 font-medium text-[#0F172A]">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs shrink-0">
@@ -199,24 +346,22 @@ export default function StudentsTable() {
                       </div>
                     </td>
 
-                    {/* Accuracy */}
                     <td className="py-3 px-4">
                       <AccuracyBadge value={player.accuracyPercentage ?? 0} />
                     </td>
 
-                    {/* Bin Breakdown */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1.5">
                         <BinPill
                           icon="🟤"
-                          label="Bio" // 👈 shortened
+                          label="Bio"
                           correct={player.biodegradableCorrect ?? 0}
                           wrong={player.biodegradableWrong ?? 0}
                           color="bg-amber-50 border-amber-200 text-amber-700"
                         />
                         <BinPill
                           icon="🔵"
-                          label="Recycle" // 👈 shortened
+                          label="Recycle"
                           correct={player.recyclableCorrect ?? 0}
                           wrong={player.recyclableWrong ?? 0}
                           color="bg-blue-50 border-blue-200 text-blue-700"
@@ -231,12 +376,10 @@ export default function StudentsTable() {
                       </div>
                     </td>
 
-                    {/* Total Segregated */}
                     <td className="py-3 px-4 font-mono text-sm text-[#64748B]">
                       {player.totalTrashSegregated ?? "N/A"}
                     </td>
 
-                    {/* Envirocoins */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1">
                         <span className="text-yellow-500">🪙</span>
@@ -246,7 +389,12 @@ export default function StudentsTable() {
                       </div>
                     </td>
 
-                    {/* Actions */}
+                    <td className="py-3 px-4">
+                      <span className="font-mono text-xs bg-gray-100 border border-gray-200 px-2 py-1 rounded-lg text-gray-600">
+                        {player.classroomCode ?? "N/A"}
+                      </span>
+                    </td>
+
                     <td className="py-3 px-4">
                       <Button
                         variant="ghost"
@@ -262,7 +410,7 @@ export default function StudentsTable() {
             </table>
           </div>
 
-          {/* ── Mobile View ── */}
+          {/* Mobile View */}
           <div className="md:hidden space-y-3">
             {filteredPlayers.map((player, key) => (
               <div
@@ -278,11 +426,16 @@ export default function StudentsTable() {
                       <p className="font-semibold text-[#0F172A]">
                         {player.username || "Unknown"}
                       </p>
-                      <div className="flex items-center gap-1 mt-0.5">
+                      <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-yellow-500 text-xs">🪙</span>
                         <span className="text-xs text-[#64748B]">
                           {player.envirocoins || 0} coins
                         </span>
+                        {player.classroomCode && (
+                          <span className="font-mono text-[10px] bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded text-gray-500">
+                            {player.classroomCode}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -295,19 +448,18 @@ export default function StudentsTable() {
                   </Button>
                 </div>
 
-                {/* Accuracy + Bins on mobile */}
                 <div className="flex items-center gap-2 flex-wrap">
                   <AccuracyBadge value={player.accuracyPercentage ?? 0} />
                   <BinPill
                     icon="🟤"
-                    label="Biodegradable"
+                    label="Bio"
                     correct={player.biodegradableCorrect ?? 0}
                     wrong={player.biodegradableWrong ?? 0}
                     color="bg-amber-50 border-amber-200 text-amber-700"
                   />
                   <BinPill
                     icon="🔵"
-                    label="Recyclable"
+                    label="Recycle"
                     correct={player.recyclableCorrect ?? 0}
                     wrong={player.recyclableWrong ?? 0}
                     color="bg-blue-50 border-blue-200 text-blue-700"
@@ -342,6 +494,7 @@ export default function StudentsTable() {
             Showing {filteredPlayers.length} student
             {filteredPlayers.length !== 1 ? "s" : ""}
             {searchTerm && ` matching "${searchTerm}"`}
+            {selectedCode !== "all" && ` in class ${selectedCode}`}
           </p>
         </div>
       )}
