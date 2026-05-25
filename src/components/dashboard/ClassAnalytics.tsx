@@ -42,6 +42,25 @@ interface ClassStats {
   createdBy: string;
 }
 
+// ─── Color Tokens ─────────────────────────────────────────────────────────────
+
+const COLORS = {
+  correct: "#10b981", // emerald-500
+  correctLight: "#34d399", // emerald-400
+  correctBg: "#d1fae5", // emerald-100
+  correctBorder: "#6ee7b7", // emerald-300
+  wrong: "#ef4444", // red-500
+  wrongLight: "#fca5a5", // red-300
+  wrongBg: "#fee2e2", // red-100
+  pageBg: "#f0fdf4", // green-50
+  border: "#a7f3d0", // emerald-200
+  textMuted: "#9ca3af", // gray-400
+  textDark: "#1f2937", // gray-800
+  textMid: "#4b5563", // gray-600
+  chartGrid: "#ecfdf5", // emerald-50
+  tooltipBorder: "#6ee7b7", // emerald-300
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function calcPct(correct: number, total: number) {
@@ -55,11 +74,14 @@ function ClassPieChart({ percentage }: { percentage: number }) {
     { name: "Correct", value: percentage },
     { name: "Wrong", value: 100 - percentage },
   ];
-  const COLORS = ["#34d399", "#fca5a5"];
+  const pieColors = [COLORS.correct, COLORS.wrong];
 
   return (
     <div className="flex flex-col items-center">
-      <p className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wide">
+      <p
+        className="text-xs font-semibold uppercase tracking-wide mb-1"
+        style={{ color: COLORS.textMuted }}
+      >
         Overall Correctness
       </p>
       <div className="relative w-32 h-32">
@@ -77,22 +99,24 @@ function ClassPieChart({ percentage }: { percentage: number }) {
               strokeWidth={0}
             >
               {data.map((_, i) => (
-                <Cell key={i} fill={COLORS[i]} />
+                <Cell key={i} fill={pieColors[i]} />
               ))}
             </Pie>
             <Tooltip
               formatter={(value) => [`${Number(value ?? 0).toFixed(1)}%`, ""]}
               contentStyle={{
                 borderRadius: "8px",
-                border: "1px solid #BBF7D0",
+                border: `1px solid ${COLORS.tooltipBorder}`,
                 fontSize: "11px",
+                backgroundColor: "#fff",
               }}
             />
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <span
-            className={`text-lg font-black ${percentage >= 50 ? "text-emerald-600" : "text-red-400"}`}
+            className="text-lg font-black"
+            style={{ color: percentage >= 50 ? COLORS.correct : COLORS.wrong }}
           >
             {percentage}%
           </span>
@@ -100,12 +124,22 @@ function ClassPieChart({ percentage }: { percentage: number }) {
       </div>
       <div className="flex gap-3 mt-1">
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-          <span className="text-[10px] text-gray-400">Correct</span>
+          <span
+            className="w-2 h-2 rounded-full inline-block"
+            style={{ backgroundColor: COLORS.correctLight }}
+          />
+          <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            Correct
+          </span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-red-300 inline-block" />
-          <span className="text-[10px] text-gray-400">Wrong</span>
+          <span
+            className="w-2 h-2 rounded-full inline-block"
+            style={{ backgroundColor: COLORS.wrong }}
+          />
+          <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+            Wrong
+          </span>
         </div>
       </div>
     </div>
@@ -135,7 +169,10 @@ function ClassBarChart({ stats }: { stats: ClassStats }) {
 
   return (
     <div className="flex flex-col">
-      <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">
+      <p
+        className="text-xs font-semibold uppercase tracking-wide mb-2"
+        style={{ color: COLORS.textMuted }}
+      >
         Bin Breakdown
       </p>
       <ResponsiveContainer width="100%" height={140}>
@@ -147,17 +184,17 @@ function ClassBarChart({ stats }: { stats: ClassStats }) {
         >
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#f0fdf4"
+            stroke={COLORS.chartGrid}
             vertical={false}
           />
           <XAxis
             dataKey="bin"
-            tick={{ fontSize: 10, fill: "#9ca3af" }}
+            tick={{ fontSize: 10, fill: COLORS.textMuted }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fontSize: 10, fill: "#9ca3af" }}
+            tick={{ fontSize: 10, fill: COLORS.textMuted }}
             axisLine={false}
             tickLine={false}
             allowDecimals={false}
@@ -165,18 +202,23 @@ function ClassBarChart({ stats }: { stats: ClassStats }) {
           <Tooltip
             contentStyle={{
               borderRadius: "8px",
-              border: "1px solid #BBF7D0",
+              border: `1px solid ${COLORS.tooltipBorder}`,
               fontSize: "11px",
+              backgroundColor: "#fff",
             }}
-            cursor={{ fill: "#f0fdf4" }}
+            cursor={{ fill: COLORS.chartGrid }}
           />
           <Legend
             iconType="circle"
             iconSize={7}
             wrapperStyle={{ fontSize: "10px", paddingTop: "4px" }}
           />
-          <Bar dataKey="Correct" fill="#34d399" radius={[3, 3, 0, 0]} />
-          <Bar dataKey="Wrong" fill="#fca5a5" radius={[3, 3, 0, 0]} />
+          <Bar
+            dataKey="Correct"
+            fill={COLORS.correct}
+            radius={[3, 3, 0, 0]}
+          />
+          <Bar dataKey="Wrong" fill={COLORS.wrong} radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -187,29 +229,53 @@ function ClassBarChart({ stats }: { stats: ClassStats }) {
 
 function ClassCard({ stats }: { stats: ClassStats }) {
   return (
-    <div className="bg-white rounded-2xl border border-[#BBF7D0] shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden">
+    <div
+      className="rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden"
+      style={{ backgroundColor: "#fff", border: `1px solid ${COLORS.border}` }}
+    >
       {/* Card Header */}
-      <div className="bg-gradient-to-r from-[#f0fdf4] to-white px-5 py-4 border-b border-[#BBF7D0]">
+      <div
+        className="px-5 py-4 border-b"
+        style={{
+          background: `linear-gradient(to right, ${COLORS.pageBg}, #fff)`,
+          borderColor: COLORS.border,
+        }}
+      >
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-semibold text-emerald-500 uppercase tracking-widest mb-0.5">
+            <p
+              className="text-[10px] font-semibold uppercase tracking-widest mb-0.5"
+              style={{ color: COLORS.correct }}
+            >
               Classroom Code
             </p>
-            <h3 className="text-xl font-black text-gray-800 font-mono tracking-wider">
+            <h3
+              className="text-xl font-black font-mono tracking-wider"
+              style={{ color: COLORS.textDark }}
+            >
               {stats.code}
             </h3>
-            <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+            <p
+              className="text-xs mt-0.5 flex items-center gap-1"
+              style={{ color: COLORS.textMuted }}
+            >
               <span>👤</span>
               <span>
                 Teacher{" "}
-                <span className="font-semibold text-gray-600">
+                <span
+                  className="font-semibold"
+                  style={{ color: COLORS.textMid }}
+                >
                   {stats.createdBy}
                 </span>
               </span>
             </p>
           </div>
 
-          <div className="flex flex-col items-center justify-center bg-emerald-500 text-white rounded-xl px-3 py-2 min-w-[56px]">
+          <div
+            className="flex flex-col items-center justify-center rounded-xl px-3 py-2 min-w-[56px]"
+            style={{ backgroundColor: COLORS.correct, color: "#fff" }}
+          >
             <span className="text-2xl font-black leading-none">
               {stats.playerCount}
             </span>
@@ -222,21 +288,30 @@ function ClassCard({ stats }: { stats: ClassStats }) {
         {/* Quick totals row */}
         <div className="flex gap-3 mt-3">
           {[
-            { label: "Attempts", value: stats.totalAttempts },
+            {
+              label: "Attempts",
+              value: stats.totalAttempts,
+              color: COLORS.textDark,
+            },
             {
               label: "Correct",
               value: stats.totalCorrect,
-              color: "text-emerald-600",
+              color: COLORS.correct,
             },
-            { label: "Wrong", value: stats.totalWrong, color: "text-red-400" },
+            {
+              label: "Wrong",
+              value: stats.totalWrong,
+              color: COLORS.wrong,
+            },
           ].map((item) => (
             <div key={item.label} className="flex flex-col">
-              <span
-                className={`text-sm font-bold ${item.color ?? "text-gray-700"}`}
-              >
+              <span className="text-sm font-bold" style={{ color: item.color }}>
                 {item.value}
               </span>
-              <span className="text-[9px] text-gray-400 uppercase tracking-wide">
+              <span
+                className="text-[9px] uppercase tracking-wide"
+                style={{ color: COLORS.textMuted }}
+              >
                 {item.label}
               </span>
             </div>
@@ -252,8 +327,14 @@ function ClassCard({ stats }: { stats: ClassStats }) {
         </div>
 
         {/* Divider */}
-        <div className="hidden sm:block w-px self-stretch bg-gray-100" />
-        <div className="block sm:hidden h-px w-full bg-gray-100" />
+        <div
+          className="hidden sm:block w-px self-stretch"
+          style={{ backgroundColor: COLORS.border }}
+        />
+        <div
+          className="block sm:hidden h-px w-full"
+          style={{ backgroundColor: COLORS.border }}
+        />
 
         {/* Bar */}
         <div className="flex-1 w-full">
@@ -268,28 +349,58 @@ function ClassCard({ stats }: { stats: ClassStats }) {
 
 function SkeletonCard() {
   return (
-    <div className="animate-pulse bg-white rounded-2xl border border-gray-100 overflow-hidden">
-      <div className="bg-gray-50 px-5 py-4 border-b border-gray-100">
+    <div
+      className="animate-pulse rounded-2xl overflow-hidden"
+      style={{ backgroundColor: "#fff", border: `1px solid ${COLORS.border}` }}
+    >
+      <div
+        className="px-5 py-4 border-b"
+        style={{ backgroundColor: COLORS.pageBg, borderColor: COLORS.border }}
+      >
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <div className="h-3 w-24 bg-gray-200 rounded" />
-            <div className="h-6 w-32 bg-gray-200 rounded" />
-            <div className="h-3 w-28 bg-gray-100 rounded" />
+            <div
+              className="h-3 w-24 rounded"
+              style={{ backgroundColor: COLORS.correctBg }}
+            />
+            <div
+              className="h-6 w-32 rounded"
+              style={{ backgroundColor: COLORS.correctBg }}
+            />
+            <div
+              className="h-3 w-28 rounded"
+              style={{ backgroundColor: COLORS.chartGrid }}
+            />
           </div>
-          <div className="w-14 h-14 bg-gray-200 rounded-xl" />
+          <div
+            className="w-14 h-14 rounded-xl"
+            style={{ backgroundColor: COLORS.correctBg }}
+          />
         </div>
         <div className="flex gap-3 mt-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="space-y-1">
-              <div className="h-4 w-8 bg-gray-200 rounded" />
-              <div className="h-2 w-12 bg-gray-100 rounded" />
+              <div
+                className="h-4 w-8 rounded"
+                style={{ backgroundColor: COLORS.correctBg }}
+              />
+              <div
+                className="h-2 w-12 rounded"
+                style={{ backgroundColor: COLORS.chartGrid }}
+              />
             </div>
           ))}
         </div>
       </div>
       <div className="p-4 flex gap-4">
-        <div className="w-32 h-32 bg-gray-100 rounded-full mx-auto" />
-        <div className="flex-1 h-36 bg-gray-100 rounded-xl" />
+        <div
+          className="w-32 h-32 rounded-full mx-auto"
+          style={{ backgroundColor: COLORS.chartGrid }}
+        />
+        <div
+          className="flex-1 h-36 rounded-xl"
+          style={{ backgroundColor: COLORS.chartGrid }}
+        />
       </div>
     </div>
   );
@@ -301,10 +412,10 @@ function EmptyState() {
   return (
     <div className="text-center py-16 col-span-full">
       <span className="text-5xl">🏫</span>
-      <h3 className="text-lg font-bold text-gray-600 mt-3">
+      <h3 className="text-lg font-bold mt-3" style={{ color: COLORS.textMid }}>
         No classrooms yet
       </h3>
-      <p className="text-sm text-gray-400 mt-1">
+      <p className="text-sm mt-1" style={{ color: COLORS.textMuted }}>
         Players will appear here once they join with a classroom code
       </p>
     </div>
@@ -321,7 +432,6 @@ export default function ClassAnalytics() {
     getClassroomCodes().then(setClassroomCodes);
   }, []);
 
-  // ── Group players by classroomCode and compute stats ──
   const classStats: ClassStats[] = useMemo(() => {
     if (!totalPlayers) return [];
 
@@ -380,14 +490,19 @@ export default function ClassAnalytics() {
       <div className="flex items-center gap-2 mb-6">
         <span className="text-2xl">🏫</span>
         <div>
-          <h2 className="text-base font-bold text-gray-800">Class Analytics</h2>
-          <p className="text-xs text-gray-400">
+          <h2
+            className="text-base font-bold"
+            style={{ color: COLORS.textDark }}
+          >
+            Class Analytics
+          </h2>
+          <p className="text-xs" style={{ color: COLORS.textMuted }}>
             Performance breakdown per classroom code
           </p>
         </div>
       </div>
 
-      {/* Grid of class cards */}
+      {/* Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {loading ? (
           [1, 2, 3].map((i) => <SkeletonCard key={i} />)
