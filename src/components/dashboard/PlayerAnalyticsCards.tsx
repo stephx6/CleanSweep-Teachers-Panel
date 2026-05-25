@@ -22,7 +22,7 @@ function OverallCorrectnessPie({ percentage }: { percentage: number }) {
     { name: "Wrong", value: 100 - percentage },
   ];
 
-  const COLORS = ["#34d399", "#fca5a5"];
+  const COLORS = ["#22c55e", "#ef4444"];
 
   return (
     <div className="flex flex-col items-center justify-center w-full">
@@ -71,11 +71,11 @@ function OverallCorrectnessPie({ percentage }: { percentage: number }) {
       {/* Legend */}
       <div className="flex gap-4 mt-2">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e] inline-block" />
           <span className="text-xs text-gray-500">Correct</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-300 inline-block" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] inline-block" />
           <span className="text-xs text-gray-500">Wrong</span>
         </div>
       </div>
@@ -156,8 +156,8 @@ function BinBarChart({
           iconSize={8}
           wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }}
         />
-        <Bar dataKey="Correct" fill="#34d399" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="Wrong" fill="#fca5a5" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="Correct" fill="#22c55e" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="Wrong" fill="#ef4444" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
