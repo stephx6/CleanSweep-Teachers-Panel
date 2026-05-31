@@ -285,38 +285,7 @@ function ClassCard({ stats }: { stats: ClassStats }) {
           </div>
         </div>
 
-        {/* Quick totals row */}
-        <div className="flex gap-3 mt-3">
-          {[
-            {
-              label: "Attempts",
-              value: stats.totalAttempts,
-              color: COLORS.textDark,
-            },
-            {
-              label: "Correct",
-              value: stats.totalCorrect,
-              color: COLORS.correct,
-            },
-            {
-              label: "Wrong",
-              value: stats.totalWrong,
-              color: COLORS.wrong,
-            },
-          ].map((item) => (
-            <div key={item.label} className="flex flex-col">
-              <span className="text-sm font-bold" style={{ color: item.color }}>
-                {item.value}
-              </span>
-              <span
-                className="text-[9px] uppercase tracking-wide"
-                style={{ color: COLORS.textMuted }}
-              >
-                {item.label}
-              </span>
-            </div>
-          ))}
-        </div>
+       
       </div>
 
       {/* Charts */}
