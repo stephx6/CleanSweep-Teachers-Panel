@@ -149,13 +149,12 @@ export default function StudentsTable() {
       result = [...result].sort(
         (a, b) => (a.accuracyPercentage ?? 0) - (b.accuracyPercentage ?? 0),
       );
-    }
-    else {
-        result = [...result].sort((a, b) => {
-          const codeA = a.classroomCode ?? "";
-          const codeB = b.classroomCode ?? "";
-          return codeA.localeCompare(codeB);
-        });
+    } else {
+      result = [...result].sort((a, b) => {
+        const codeA = a.classroomCode ?? "";
+        const codeB = b.classroomCode ?? "";
+        return codeA.localeCompare(codeB);
+      });
     }
 
     return result;
@@ -373,6 +372,13 @@ export default function StudentsTable() {
                           wrong={player.residualWrong ?? 0}
                           color="bg-gray-50 border-gray-200 text-gray-600"
                         />
+                        <BinPill
+                          icon="🟣"
+                          label="Special"
+                          correct={player.specialWasteCorrect ?? 0}
+                          wrong={player.specialWasteWrong ?? 0}
+                          color="bg-purple-50 border-purple-200 text-purple-700"
+                        />
                       </div>
                     </td>
 
@@ -470,6 +476,13 @@ export default function StudentsTable() {
                     correct={player.residualCorrect ?? 0}
                     wrong={player.residualWrong ?? 0}
                     color="bg-gray-50 border-gray-200 text-gray-600"
+                  />
+                  <BinPill
+                    icon="🟣"
+                    label="Special"
+                    correct={player.specialWasteCorrect ?? 0}
+                    wrong={player.specialWasteWrong ?? 0}
+                    color="bg-purple-50 border-purple-200 text-purple-700"
                   />
                 </div>
               </div>

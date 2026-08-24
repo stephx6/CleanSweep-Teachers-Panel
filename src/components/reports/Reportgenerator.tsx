@@ -50,6 +50,13 @@ function buildSummaryRows(analytics: PlayerAnalytics) {
       analytics.residualTotal,
       analytics.residualCorrectnessPercentage,
     ],
+    [
+      "Special Waste",
+      analytics.specialWasteCorrect,
+      analytics.specialWasteWrong,
+      analytics.specialWasteTotal,
+      analytics.specialWasteCorrectnessPercentage,
+    ],
   ];
 }
 
@@ -71,6 +78,9 @@ function buildPerPlayerRows(analytics: PlayerAnalytics) {
     "Residual Correct",
     "Residual Wrong",
     "Residual Accuracy (%)",
+    "Special Waste Correct",
+    "Special Waste Wrong",
+    "Special Waste Accuracy (%)",
   ];
 
   const rows = analytics.perPlayer.map((p: any) => [
@@ -90,6 +100,9 @@ function buildPerPlayerRows(analytics: PlayerAnalytics) {
     p.residual.correct,
     p.residual.wrong,
     p.residual.percentage,
+    p.specialWaste?.correct ?? 0,
+    p.specialWaste?.wrong ?? 0,
+    p.specialWaste?.percentage ?? 0,
   ]);
 
   return [headers, ...rows];
@@ -115,7 +128,7 @@ function exportExcel(analytics: PlayerAnalytics) {
   // Sheet 2 — Per Player
   const playerData = buildPerPlayerRows(analytics);
   const wsPlayers = XLSX.utils.aoa_to_sheet(playerData);
-  wsPlayers["!cols"] = Array(16).fill({ wch: 20 });
+  wsPlayers["!cols"] = Array(19).fill({ wch: 20 });
   XLSX.utils.book_append_sheet(wb, wsPlayers, "Per Player");
 
   XLSX.writeFile(wb, `cleansweep-report-${getTimestamp()}.xlsx`);

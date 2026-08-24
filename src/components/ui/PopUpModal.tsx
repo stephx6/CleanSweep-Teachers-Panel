@@ -86,6 +86,8 @@ export default function PopUpModal({
   const recWrong = player.recyclableWrong ?? 0;
   const resCorrect = player.residualCorrect ?? 0;
   const resWrong = player.residualWrong ?? 0;
+  const specialCorrect = player.specialWasteCorrect ?? 0;
+  const specialWrong = player.specialWasteWrong ?? 0;
 
   const overallPct = player.accuracyPercentage ?? 0;
 
@@ -175,6 +177,18 @@ export default function PopUpModal({
                 barColor="bg-gray-500"
                 pctColor={
                   calcPct(resCorrect, resWrong) >= 50
+                    ? "text-emerald-600"
+                    : "text-red-400"
+                }
+              />
+              <BinStatRow
+                icon="🟣"
+                label="Special Waste"
+                correct={specialCorrect}
+                wrong={specialWrong}
+                barColor="bg-purple-400"
+                pctColor={
+                  calcPct(specialCorrect, specialWrong) >= 50
                     ? "text-emerald-600"
                     : "text-red-400"
                 }
