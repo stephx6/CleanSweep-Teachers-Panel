@@ -55,7 +55,6 @@ export const getAllPlayers = async () => {
   }));
 };
 
-
 export const getPlayerAnalytics = async () => {
   const q = query(
     collection(db, playerCollectionName),
@@ -65,20 +64,20 @@ export const getPlayerAnalytics = async () => {
   const querySnapshot = await getDocs(q);
   const players = querySnapshot.docs.map((doc) => doc.data());
 
-  const playerClassroom = players.filter(p => p.classroomCode !== undefined);
-  
+  const playerClassroom = players.filter((p) => p.classroomCode !== undefined);
 
   const q2 = query(
-    collection(db , "ClassroomCodes"),
-    where("code" , "in", playerClassroom.map(e => e.classroomCode))
-  )
-  const querySnapshot2 =  await getDocs(q2);
+    collection(db, "ClassroomCodes"),
+    where(
+      "code",
+      "in",
+      playerClassroom.map((e) => e.classroomCode),
+    ),
+  );
+  const querySnapshot2 = await getDocs(q2);
   const createdBy = querySnapshot2.docs.map((doc) => doc.data());
-  
-  const classroomMap = new Map(
-    createdBy.map((c) => [c.code, c.createdBy])
-  )
-    
+
+  const classroomMap = new Map(createdBy.map((c) => [c.code, c.createdBy]));
 
   // Pre-compute shared totals
   const totalAttempts = players.reduce(
@@ -120,6 +119,15 @@ export const getPlayerAnalytics = async () => {
     0,
   );
   const residualTotal = residualCorrect + residualWrong;
+  const specialWasteCorrect = players.reduce(
+    (sum, p) => sum + (p.specialWasteCorrect ?? 0),
+    0,
+  );
+  const specialWasteWrong = players.reduce(
+    (sum, p) => sum + (p.specialWasteWrong ?? 0),
+    0,
+  );
+  const specialWasteTotal = specialWasteCorrect + specialWasteWrong;
 
   const calcPercentage = (correct: number, total: number) =>
     total > 0 ? parseFloat(((correct / total) * 100).toFixed(2)) : 0;
@@ -164,6 +172,15 @@ export const getPlayerAnalytics = async () => {
       residualTotal,
     ),
 
+    // Special Waste bin
+    specialWasteCorrect,
+    specialWasteWrong,
+    specialWasteTotal,
+    specialWasteCorrectnessPercentage: calcPercentage(
+      specialWasteCorrect,
+      specialWasteWrong,
+    ),
+
     // Per-player breakdown
     perPlayer: players.map((p) => ({
       username: p.username,
@@ -205,8 +222,6 @@ export const getPlayerAnalytics = async () => {
   return analytics;
 };
 
-
-
 // Generate a random classroom code
 const generateRandomCode = (): string => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -218,7 +233,10 @@ const generateRandomCode = (): string => {
 };
 
 // Create a new classroom code
-export const createClassroomCode = async (uid: string): Promise<string> => {
+export const createClassroomCode = async (
+  uid: string,
+  classroomName: string,
+): Promise<string> => {
   const currentAdmin = await getAdminName(uid);
 
   console.log(currentAdmin);
@@ -227,6 +245,7 @@ export const createClassroomCode = async (uid: string): Promise<string> => {
 
   const codeData = {
     code: newCode,
+    classroomName,
     isActive: true,
     createdBy: currentAdmin?.username,
     createdAt: new Date().toISOString(),

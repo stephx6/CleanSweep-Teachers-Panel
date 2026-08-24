@@ -12,6 +12,7 @@ export interface StatCardProps {
 export interface ClassroomCode {
   id: string;
   code: string;
+  classroomName: string;
   isActive: boolean;
   createdBy: string;
   createdAt: string;
@@ -34,12 +35,12 @@ export interface PlayerAnalytics {
   totalWrong: number;
   overallAccuracy: number;
   totalCorrectnessPercentage: number;
-  totalTrashSegregated : number
+  totalTrashSegregated: number;
   biodegradableCorrect: number;
   biodegradableWrong: number;
   biodegradableTotal: number;
   biodegradableCorrectnessPercentage: number;
-  perPlayer :LeaderboardPlayer[];
+  perPlayer: LeaderboardPlayer[];
   recyclableCorrect: number;
   recyclableWrong: number;
   recyclableTotal: number;
@@ -49,6 +50,11 @@ export interface PlayerAnalytics {
   residualWrong: number;
   residualTotal: number;
   residualCorrectnessPercentage: number;
+
+  specialWasteCorrect: number;
+  specialWasteWrong: number;
+  specialWasteTotal: number;
+  specialWasteCorrectnessPercentage: number;
 }
 
 export interface PlayerAnalyticsCardsProps {
@@ -62,6 +68,9 @@ export interface LeaderboardPlayer {
   accuracyPercentage: number;
   envirocoins: number;
   totalAttempts: number;
+  specialWasteCorrect?: number;
+  specialWasteWrong?: number;
+  [key: string]: unknown;
 }
 
 export interface LeaderboardProps {
@@ -83,6 +92,8 @@ export interface Player {
   recyclableWrong?: number;
   residualCorrect?: number;
   residualWrong?: number;
+  specialWasteCorrect?: number;
+  specialWasteWrong?: number;
   [key: string]: unknown;
 }
 

@@ -19,6 +19,8 @@ import { getAuth } from "firebase/auth";
 
 export default function RoomCode() {
   const [generatedCode, setGeneratedCode] = useState("");
+  const [classroomName, setClassroomName] = useState("");
+  const [nameError, setNameError] = useState("");
   const [codes, setCodes] = useState<ClassroomCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -42,23 +44,30 @@ export default function RoomCode() {
     }
   };
 
- const handleGenerate = async () => {
-   try {
-     const auth = getAuth();
-     const uid = auth.currentUser?.uid;
+  const handleGenerate = async () => {
+    if (!classroomName.trim()) {
+      setNameError("Classroom name is required");
+      return;
+    }
+    setNameError("");
 
-     if (!uid) {
-       console.error("No logged in user");
-       return;
-     }
+    try {
+      const auth = getAuth();
+      const uid = auth.currentUser?.uid;
 
-     const code = await createClassroomCode(uid); 
-     setGeneratedCode(code);
-     await fetchCodes();
-   } catch (err) {
-     console.error(err);
-   }
- };
+      if (!uid) {
+        console.error("No logged in user");
+        return;
+      }
+
+      const code = await createClassroomCode(uid, classroomName.trim());
+      setGeneratedCode(code);
+      setClassroomName("");
+      await fetchCodes();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleCopyCode = (code: string) => {
     copyToClipboard(code);
@@ -125,20 +134,38 @@ export default function RoomCode() {
               Create new access codes for your classrooms
             </p>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <div className="flex-1 sm:w-64">
-              <Input
-                value={generatedCode}
-                placeholder="Generated code will appear here"
-                readOnly
-                size="md"
-                fullWidth
-              />
-            </div>
-            <Button onClick={handleGenerate} size="md">
-              Generate
-            </Button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-start">
+          <div className="flex-1">
+            <Input
+              value={classroomName}
+              onChange={(e) => {
+                setClassroomName(e.target.value);
+                if (nameError) setNameError("");
+              }}
+              placeholder="Classroom name (required)"
+              size="md"
+              fullWidth
+            />
+            {nameError && (
+              <p className="text-xs text-red-500 mt-1">{nameError}</p>
+            )}
           </div>
+
+          <div className="flex-1 sm:w-64">
+            <Input
+              value={generatedCode}
+              placeholder="Generated code will appear here"
+              readOnly
+              size="md"
+              fullWidth
+            />
+          </div>
+
+          <Button onClick={handleGenerate} size="md">
+            Generate
+          </Button>
         </div>
 
         {/* Latest Generated Code Highlight */}
@@ -247,6 +274,9 @@ export default function RoomCode() {
                         {code.isActive ? "Active" : "Disabled"}
                       </span>
                     </div>
+                    <p className="text-sm font-medium text-[#0F172A] mb-1">
+                      {code.classroomName || "—"}
+                    </p>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[#64748B]">
                       <span>Created by: {code.createdBy}</span>
                       <span>Created: {formatDate(code.createdAt)}</span>
