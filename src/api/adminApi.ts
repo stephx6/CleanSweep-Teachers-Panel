@@ -178,7 +178,7 @@ export const getPlayerAnalytics = async () => {
     specialWasteTotal,
     specialWasteCorrectnessPercentage: calcPercentage(
       specialWasteCorrect,
-      specialWasteWrong,
+      specialWasteTotal,
     ),
 
     // Per-player breakdown

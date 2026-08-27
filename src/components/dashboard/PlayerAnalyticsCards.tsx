@@ -44,6 +44,7 @@ function OverallCorrectnessPie({ percentage }: { percentage: number }) {
                 <Cell key={index} fill={COLORS[index]} />
               ))}
             </Pie>
+
             <Tooltip
               formatter={(value) => [`${Number(value).toFixed(1)}%`, ""]}
               contentStyle={{
@@ -64,6 +65,7 @@ function OverallCorrectnessPie({ percentage }: { percentage: number }) {
           >
             {percentage}%
           </span>
+
           <span className="text-[10px] text-gray-400 font-medium">correct</span>
         </div>
       </div>
@@ -74,6 +76,7 @@ function OverallCorrectnessPie({ percentage }: { percentage: number }) {
           <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e] inline-block" />
           <span className="text-xs text-gray-500">Correct</span>
         </div>
+
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] inline-block" />
           <span className="text-xs text-gray-500">Wrong</span>
@@ -88,17 +91,27 @@ function OverallCorrectnessPie({ percentage }: { percentage: number }) {
 function BinBarChart({
   biodegradableCorrect,
   biodegradableWrong,
+
   recyclableCorrect,
   recyclableWrong,
+
   residualCorrect,
   residualWrong,
+
+  specialWasteCorrect,
+  specialWasteWrong,
 }: {
   biodegradableCorrect: number;
   biodegradableWrong: number;
+
   recyclableCorrect: number;
   recyclableWrong: number;
+
   residualCorrect: number;
   residualWrong: number;
+
+  specialWasteCorrect: number;
+  specialWasteWrong: number;
 }) {
   const data = [
     {
@@ -116,6 +129,11 @@ function BinBarChart({
       Correct: residualCorrect,
       Wrong: residualWrong,
     },
+    {
+      bin: "Special Waste",
+      Correct: specialWasteCorrect,
+      Wrong: specialWasteWrong,
+    },
   ];
 
   return (
@@ -131,18 +149,28 @@ function BinBarChart({
           stroke="#f0fdf4"
           vertical={false}
         />
+
         <XAxis
           dataKey="bin"
-          tick={{ fontSize: 11, fill: "#6b7280", fontWeight: 500 }}
+          tick={{
+            fontSize: 11,
+            fill: "#6b7280",
+            fontWeight: 500,
+          }}
           axisLine={false}
           tickLine={false}
         />
+
         <YAxis
-          tick={{ fontSize: 11, fill: "#9ca3af" }}
+          tick={{
+            fontSize: 11,
+            fill: "#9ca3af",
+          }}
           axisLine={false}
           tickLine={false}
           allowDecimals={false}
         />
+
         <Tooltip
           contentStyle={{
             borderRadius: "10px",
@@ -151,12 +179,18 @@ function BinBarChart({
           }}
           cursor={{ fill: "#f0fdf4" }}
         />
+
         <Legend
           iconType="circle"
           iconSize={8}
-          wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }}
+          wrapperStyle={{
+            fontSize: "12px",
+            paddingTop: "8px",
+          }}
         />
+
         <Bar dataKey="Correct" fill="#22c55e" radius={[4, 4, 0, 0]} />
+
         <Bar dataKey="Wrong" fill="#ef4444" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
@@ -176,10 +210,12 @@ export default function PlayerAnalyticsCards({
         <div className="p-5">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-2xl">📈</span>
+
             <div>
               <h2 className="text-base font-bold text-gray-800">
                 Overall Correctness
               </h2>
+
               <p className="text-xs text-gray-400">
                 Aggregated across all players
               </p>
@@ -197,10 +233,12 @@ export default function PlayerAnalyticsCards({
         <div className="p-5">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-2xl">🗑️</span>
+
             <div>
               <h2 className="text-base font-bold text-gray-800">
                 Bin Correctness Breakdown
               </h2>
+
               <p className="text-xs text-gray-400">
                 Correct vs Wrong per category
               </p>
@@ -214,6 +252,8 @@ export default function PlayerAnalyticsCards({
             recyclableWrong={analytics?.recyclableWrong ?? 0}
             residualCorrect={analytics?.residualCorrect ?? 0}
             residualWrong={analytics?.residualWrong ?? 0}
+            specialWasteCorrect={analytics?.specialWasteCorrect ?? 0}
+            specialWasteWrong={analytics?.specialWasteWrong ?? 0}
           />
         </div>
       </Card>
