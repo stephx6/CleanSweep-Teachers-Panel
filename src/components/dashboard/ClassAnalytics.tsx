@@ -33,12 +33,19 @@ interface ClassStats {
   totalCorrect: number;
   totalWrong: number;
   correctnessPercentage: number;
+
   biodegradableCorrect: number;
   biodegradableWrong: number;
+
   recyclableCorrect: number;
   recyclableWrong: number;
+
   residualCorrect: number;
   residualWrong: number;
+
+  specialWasteCorrect: number; // ADD
+  specialWasteWrong: number; // ADD
+
   createdBy: string;
 }
 
@@ -151,12 +158,12 @@ function ClassPieChart({ percentage }: { percentage: number }) {
 function ClassBarChart({ stats }: { stats: ClassStats }) {
   const data = [
     {
-      bin: "Bio",
+      bin: "Biodegradable",
       Correct: stats.biodegradableCorrect,
       Wrong: stats.biodegradableWrong,
     },
     {
-      bin: "Recycle",
+      bin: "Recyclable",
       Correct: stats.recyclableCorrect,
       Wrong: stats.recyclableWrong,
     },
@@ -165,40 +172,68 @@ function ClassBarChart({ stats }: { stats: ClassStats }) {
       Correct: stats.residualCorrect,
       Wrong: stats.residualWrong,
     },
+    {
+      bin: "Special Waste",
+      Correct: stats.specialWasteCorrect,
+      Wrong: stats.specialWasteWrong,
+    },
   ];
 
   return (
-    <div className="flex flex-col">
-      <p
-        className="text-xs font-semibold uppercase tracking-wide mb-2"
-        style={{ color: COLORS.textMuted }}
-      >
-        Bin Breakdown
-      </p>
-      <ResponsiveContainer width="100%" height={140}>
+    <div className="flex flex-col w-full">
+      <div className="flex items-center justify-between mb-2">
+        <p
+          className="text-xs font-semibold uppercase tracking-wide"
+          style={{ color: COLORS.textMuted }}
+        >
+          Bin Breakdown
+        </p>
+
+        <span className="text-[10px]" style={{ color: COLORS.textMuted }}>
+          Correct vs Wrong
+        </span>
+      </div>
+
+      <ResponsiveContainer width="100%" height={220}>
         <BarChart
           data={data}
-          margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
-          barGap={3}
-          barCategoryGap="30%"
+          margin={{
+            top: 8,
+            right: 8,
+            left: -15,
+            bottom: 20,
+          }}
+          barGap={4}
+          barCategoryGap="20%"
         >
           <CartesianGrid
             strokeDasharray="3 3"
             stroke={COLORS.chartGrid}
             vertical={false}
           />
+
           <XAxis
             dataKey="bin"
-            tick={{ fontSize: 10, fill: COLORS.textMuted }}
+            tick={{
+              fontSize: 9,
+              fill: COLORS.textMuted,
+            }}
             axisLine={false}
             tickLine={false}
+            interval={0}
+            height={45}
           />
+
           <YAxis
-            tick={{ fontSize: 10, fill: COLORS.textMuted }}
+            tick={{
+              fontSize: 10,
+              fill: COLORS.textMuted,
+            }}
             axisLine={false}
             tickLine={false}
             allowDecimals={false}
           />
+
           <Tooltip
             contentStyle={{
               borderRadius: "8px",
@@ -208,17 +243,19 @@ function ClassBarChart({ stats }: { stats: ClassStats }) {
             }}
             cursor={{ fill: COLORS.chartGrid }}
           />
+
           <Legend
             iconType="circle"
             iconSize={7}
-            wrapperStyle={{ fontSize: "10px", paddingTop: "4px" }}
+            wrapperStyle={{
+              fontSize: "10px",
+              paddingTop: "6px",
+            }}
           />
-          <Bar
-            dataKey="Correct"
-            fill={COLORS.correct}
-            radius={[3, 3, 0, 0]}
-          />
-          <Bar dataKey="Wrong" fill={COLORS.wrong} radius={[3, 3, 0, 0]} />
+
+          <Bar dataKey="Correct" fill={COLORS.correct} radius={[4, 4, 0, 0]} />
+
+          <Bar dataKey="Wrong" fill={COLORS.wrong} radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -284,12 +321,10 @@ function ClassCard({ stats }: { stats: ClassStats }) {
             </span>
           </div>
         </div>
-
-       
       </div>
 
       {/* Charts */}
-      <div className="p-4 flex flex-col sm:flex-row gap-4 items-center flex-1">
+      <div className="p-5 flex flex-col sm:flex-row gap-6 items-center flex-1">
         {/* Pie */}
         <div className="flex-shrink-0">
           <ClassPieChart percentage={stats.correctnessPercentage} />
@@ -306,7 +341,7 @@ function ClassCard({ stats }: { stats: ClassStats }) {
         />
 
         {/* Bar */}
-        <div className="flex-1 w-full">
+        <div className="flex-1 w-full min-w-0">
           <ClassBarChart stats={stats} />
         </div>
       </div>
@@ -411,21 +446,28 @@ export default function ClassAnalytics() {
 
       if (!map.has(code)) {
         const meta = classroomCodes.find((c) => c.code === code);
-        map.set(code, {
-          code,
-          playerCount: 0,
-          totalAttempts: 0,
-          totalCorrect: 0,
-          totalWrong: 0,
-          correctnessPercentage: 0,
-          biodegradableCorrect: 0,
-          biodegradableWrong: 0,
-          recyclableCorrect: 0,
-          recyclableWrong: 0,
-          residualCorrect: 0,
-          residualWrong: 0,
-          createdBy: meta?.createdBy ?? "Unknown",
-        });
+       map.set(code, {
+         code,
+         playerCount: 0,
+         totalAttempts: 0,
+         totalCorrect: 0,
+         totalWrong: 0,
+         correctnessPercentage: 0,
+
+         biodegradableCorrect: 0,
+         biodegradableWrong: 0,
+
+         recyclableCorrect: 0,
+         recyclableWrong: 0,
+
+         residualCorrect: 0,
+         residualWrong: 0,
+
+         specialWasteCorrect: 0, // ADD
+         specialWasteWrong: 0, // ADD
+
+         createdBy: meta?.createdBy ?? "Unknown",
+       });
       }
 
       const entry = map.get(code)!;
@@ -439,6 +481,8 @@ export default function ClassAnalytics() {
       entry.recyclableWrong += p.recyclableWrong ?? 0;
       entry.residualCorrect += p.residualCorrect ?? 0;
       entry.residualWrong += p.residualWrong ?? 0;
+      entry.specialWasteCorrect += p.specialWasteCorrect ?? 0;
+      entry.specialWasteWrong += p.specialWasteWrong ?? 0;
     });
 
     map.forEach((entry) => {
