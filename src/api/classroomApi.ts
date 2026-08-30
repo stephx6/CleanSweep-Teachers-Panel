@@ -14,28 +14,61 @@ export async function getAllClassrooms() {
   }));
 }
 // Shared helper: takes any array of player docs and returns the analytics shape
-const computeAnalytics = (players: any[], classroomMap?: Map<string, string>) => {
+const computeAnalytics = (
+  players: any[],
+  classroomMap?: Map<string, string>,
+) => {
   const calcPercentage = (correct: number, total: number) =>
     total > 0 ? parseFloat(((correct / total) * 100).toFixed(2)) : 0;
 
-  const totalAttempts = players.reduce((sum, p) => sum + (p.totalAttempts ?? 0), 0);
-  const totalCorrect = players.reduce((sum, p) => sum + (p.totalCorrect ?? 0), 0);
+  const totalAttempts = players.reduce(
+    (sum, p) => sum + (p.totalAttempts ?? 0),
+    0,
+  );
+  const totalCorrect = players.reduce(
+    (sum, p) => sum + (p.totalCorrect ?? 0),
+    0,
+  );
   const totalWrong = players.reduce((sum, p) => sum + (p.totalWrong ?? 0), 0);
 
-  const biodegradableCorrect = players.reduce((sum, p) => sum + (p.biodegradableCorrect ?? 0), 0);
-  const biodegradableWrong = players.reduce((sum, p) => sum + (p.biodegradableWrong ?? 0), 0);
+  const biodegradableCorrect = players.reduce(
+    (sum, p) => sum + (p.biodegradableCorrect ?? 0),
+    0,
+  );
+  const biodegradableWrong = players.reduce(
+    (sum, p) => sum + (p.biodegradableWrong ?? 0),
+    0,
+  );
   const biodegradableTotal = biodegradableCorrect + biodegradableWrong;
 
-  const recyclableCorrect = players.reduce((sum, p) => sum + (p.recyclableCorrect ?? 0), 0);
-  const recyclableWrong = players.reduce((sum, p) => sum + (p.recyclableWrong ?? 0), 0);
+  const recyclableCorrect = players.reduce(
+    (sum, p) => sum + (p.recyclableCorrect ?? 0),
+    0,
+  );
+  const recyclableWrong = players.reduce(
+    (sum, p) => sum + (p.recyclableWrong ?? 0),
+    0,
+  );
   const recyclableTotal = recyclableCorrect + recyclableWrong;
 
-  const residualCorrect = players.reduce((sum, p) => sum + (p.residualCorrect ?? 0), 0);
-  const residualWrong = players.reduce((sum, p) => sum + (p.residualWrong ?? 0), 0);
+  const residualCorrect = players.reduce(
+    (sum, p) => sum + (p.residualCorrect ?? 0),
+    0,
+  );
+  const residualWrong = players.reduce(
+    (sum, p) => sum + (p.residualWrong ?? 0),
+    0,
+  );
   const residualTotal = residualCorrect + residualWrong;
 
-  const specialWasteCorrect = players.reduce((sum, p) => sum + (p.specialWasteCorrect ?? 0), 0);
-  const specialWasteWrong = players.reduce((sum, p) => sum + (p.specialWasteWrong ?? 0), 0);
+  const specialWasteCorrect = players.reduce(
+    (sum, p) => sum + (p.specialWasteCorrect ?? 0),
+    0,
+  );
+  const specialWasteWrong = players.reduce(
+    (sum, p) => sum + (p.specialWasteWrong ?? 0),
+    0,
+  );
   const specialWasteTotal = specialWasteCorrect + specialWasteWrong;
 
   return {
@@ -46,29 +79,46 @@ const computeAnalytics = (players: any[], classroomMap?: Map<string, string>) =>
     totalWrong,
     overallAccuracy: Math.round(calcPercentage(totalCorrect, totalAttempts)),
     totalCorrectnessPercentage: calcPercentage(totalCorrect, totalAttempts),
-    totalTrashSegregated: players.reduce((sum, p) => sum + (p.totalTrashSegregated ?? 0), 0),
+    totalTrashSegregated: players.reduce(
+      (sum, p) => sum + (p.totalTrashSegregated ?? 0),
+      0,
+    ),
 
     biodegradableCorrect,
     biodegradableWrong,
     biodegradableTotal,
-    biodegradableCorrectnessPercentage: calcPercentage(biodegradableCorrect, biodegradableTotal),
+    biodegradableCorrectnessPercentage: calcPercentage(
+      biodegradableCorrect,
+      biodegradableTotal,
+    ),
 
     recyclableCorrect,
     recyclableWrong,
     recyclableTotal,
-    recyclableCorrectnessPercentage: calcPercentage(recyclableCorrect, recyclableTotal),
+    recyclableCorrectnessPercentage: calcPercentage(
+      recyclableCorrect,
+      recyclableTotal,
+    ),
 
     residualCorrect,
     residualWrong,
     residualTotal,
-    residualCorrectnessPercentage: calcPercentage(residualCorrect, residualTotal),
+    residualCorrectnessPercentage: calcPercentage(
+      residualCorrect,
+      residualTotal,
+    ),
 
     specialWasteCorrect,
     specialWasteWrong,
     specialWasteTotal,
-    specialWasteCorrectnessPercentage: calcPercentage(specialWasteCorrect, specialWasteTotal),
+    specialWasteCorrectnessPercentage: calcPercentage(
+      specialWasteCorrect,
+      specialWasteTotal,
+    ),
 
     perPlayer: players.map((p) => ({
+      studentId: p.studentId,
+      studentName: p.studentName,
       username: p.username,
       totalAttempts: p.totalAttempts ?? 0,
       totalCorrect: p.totalCorrect ?? 0,
@@ -100,10 +150,13 @@ const computeAnalytics = (players: any[], classroomMap?: Map<string, string>) =>
           (p.residualCorrect ?? 0) + (p.residualWrong ?? 0),
         ),
       },
-      specialWaste : {
-        correct : p.specialWasteCorrect ?? 0,
-        wrong : p.specialWasteWrong ?? 0,
-        percentage : calcPercentage(p.specialWasteCorrect ?? 0, (p.specialWasteCorrect ?? 0) + (p.specialWasteWrong ?? 0),)
+      specialWaste: {
+        correct: p.specialWasteCorrect ?? 0,
+        wrong: p.specialWasteWrong ?? 0,
+        percentage: calcPercentage(
+          p.specialWasteCorrect ?? 0,
+          (p.specialWasteCorrect ?? 0) + (p.specialWasteWrong ?? 0),
+        ),
       },
       classroomcode: p.classroomCode,
       createdBy: classroomMap?.get(p.classroomCode) ?? null,

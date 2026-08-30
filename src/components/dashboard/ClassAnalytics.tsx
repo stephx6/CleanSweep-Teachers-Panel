@@ -21,6 +21,7 @@ import {
 interface ClassroomCode {
   id: string;
   code: string;
+  classroomName?: string;
   createdBy: string;
   createdAt: string;
   isActive: boolean;
@@ -28,6 +29,7 @@ interface ClassroomCode {
 
 interface ClassStats {
   code: string;
+  classroomName: string;
   playerCount: number;
   totalAttempts: number;
   totalCorrect: number;
@@ -284,13 +286,13 @@ function ClassCard({ stats }: { stats: ClassStats }) {
               className="text-[10px] font-semibold uppercase tracking-widest mb-0.5"
               style={{ color: COLORS.correct }}
             >
-              Classroom Code
+              Classroom
             </p>
             <h3
-              className="text-xl font-black font-mono tracking-wider"
+              className="text-xl font-black tracking-wide"
               style={{ color: COLORS.textDark }}
             >
-              {stats.code}
+              {stats.classroomName}
             </h3>
             <p
               className="text-xs mt-0.5 flex items-center gap-1"
@@ -442,32 +444,36 @@ export default function ClassAnalytics() {
     const map = new Map<string, ClassStats>();
 
     totalPlayers.forEach((p) => {
-      const code = p.classroomCode ?? "No Code";
+      // Skip players with no classroom code entirely — don't group them
+      if (!p.classroomCode) return;
+
+      const code = p.classroomCode;
 
       if (!map.has(code)) {
         const meta = classroomCodes.find((c) => c.code === code);
-       map.set(code, {
-         code,
-         playerCount: 0,
-         totalAttempts: 0,
-         totalCorrect: 0,
-         totalWrong: 0,
-         correctnessPercentage: 0,
+        map.set(code, {
+          code,
+          classroomName: meta?.classroomName ?? code,
+          playerCount: 0,
+          totalAttempts: 0,
+          totalCorrect: 0,
+          totalWrong: 0,
+          correctnessPercentage: 0,
 
-         biodegradableCorrect: 0,
-         biodegradableWrong: 0,
+          biodegradableCorrect: 0,
+          biodegradableWrong: 0,
 
-         recyclableCorrect: 0,
-         recyclableWrong: 0,
+          recyclableCorrect: 0,
+          recyclableWrong: 0,
 
-         residualCorrect: 0,
-         residualWrong: 0,
+          residualCorrect: 0,
+          residualWrong: 0,
 
-         specialWasteCorrect: 0, // ADD
-         specialWasteWrong: 0, // ADD
+          specialWasteCorrect: 0, // ADD
+          specialWasteWrong: 0, // ADD
 
-         createdBy: meta?.createdBy ?? "Unknown",
-       });
+          createdBy: meta?.createdBy ?? "Unknown",
+        });
       }
 
       const entry = map.get(code)!;
@@ -493,7 +499,7 @@ export default function ClassAnalytics() {
     });
 
     return Array.from(map.values()).sort((a, b) =>
-      a.code.localeCompare(b.code),
+      a.classroomName.localeCompare(b.classroomName),
     );
   }, [totalPlayers, classroomCodes]);
 

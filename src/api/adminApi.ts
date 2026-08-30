@@ -184,6 +184,8 @@ export const getPlayerAnalytics = async () => {
 
     // Per-player breakdown
     perPlayer: players.map((p) => ({
+      studentId: p.studentId,
+      studentName: p.studentName,
       username: p.username,
       totalAttempts: p.totalAttempts ?? 0,
       totalCorrect: p.totalCorrect ?? 0,
@@ -222,8 +224,6 @@ export const getPlayerAnalytics = async () => {
 
   return analytics;
 };
-
-
 
 // Generate a random classroom code
 const generateRandomCode = (): string => {

@@ -20,7 +20,9 @@ interface PlayerBinStats {
   percentage: number;
 }
 
-interface PlayerRow {
+interface PlayerRowData {
+  studentId?: string;
+  studentName?: string;
   username: string;
   totalAttempts: number;
   totalCorrect: number;
@@ -61,7 +63,7 @@ interface ClassroomAnalytics {
   specialWasteWrong: number;
   specialWasteTotal: number;
   specialWasteCorrectnessPercentage: number;
-  perPlayer: PlayerRow[];
+  perPlayer: PlayerRowData[];
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
@@ -170,11 +172,15 @@ function BinStatsCard({
 
 // ─── Player Row ──────────────────────────────────────────────────────────────
 
-function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
+function PlayerRow({ player, rank }: { player: PlayerRowData; rank: number }) {
   const isTop3 = rank <= 3;
 
   // Safely access specialWaste with fallback
   const specialWastePercentage = player.specialWaste?.percentage ?? 0;
+
+  // Newly-added students have no username until the game assigns one
+  const displayName = player.username || player.studentName || "Unclaimed";
+  const initial = displayName.charAt(0).toUpperCase();
 
   return (
     <div
@@ -197,10 +203,10 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
       {/* Avatar + Username */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-sm shrink-0">
-          {player.username.charAt(0).toUpperCase()}
+          {initial}
         </div>
         <span className="text-sm font-semibold text-gray-800 truncate">
-          {player.username}
+          {displayName}
         </span>
       </div>
 
@@ -215,7 +221,7 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
                 : "text-red-400"
           }`}
         >
-          {player.accuracyPercentage.toFixed(2)}%
+          {(player.accuracyPercentage ?? 0).toFixed(2)}%
         </p>
         <p className="text-[10px] text-gray-400">accuracy</p>
       </div>
@@ -223,7 +229,7 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
       {/* Trash Segregated */}
       <div className="text-right shrink-0 w-16 hidden sm:block">
         <p className="text-sm font-semibold text-gray-600">
-          {player.totalTrashSegregated}
+          {player.totalTrashSegregated ?? 0}
         </p>
         <p className="text-[10px] text-gray-400">🗑️ trash</p>
       </div>
@@ -239,13 +245,13 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
       {/* Bin Breakdown */}
       <div className="hidden lg:flex items-center gap-1 text-[10px]">
         <span className="px-1.5 py-0.5 bg-amber-50 rounded text-amber-700">
-          🟤{player.biodegradable.percentage}%
+          🟤{player.biodegradable?.percentage ?? 0}%
         </span>
         <span className="px-1.5 py-0.5 bg-blue-50 rounded text-blue-700">
-          🔵{player.recyclable.percentage}%
+          🔵{player.recyclable?.percentage ?? 0}%
         </span>
         <span className="px-1.5 py-0.5 bg-gray-50 rounded text-gray-600">
-          ⚫{player.residual.percentage}%
+          ⚫{player.residual?.percentage ?? 0}%
         </span>
         {player.specialWaste && (
           <span className="px-1.5 py-0.5 bg-purple-50 rounded text-purple-700">
@@ -253,6 +259,20 @@ function PlayerRow({ player, rank }: { player: PlayerRow; rank: number }) {
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Empty Rankings State ────────────────────────────────────────────────────
+
+function EmptyRankings() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-gray-300 gap-2">
+      <span className="text-4xl">📚</span>
+      <p className="text-sm font-medium text-gray-400">No players found</p>
+      <p className="text-xs text-gray-300">
+        This classroom has no active players yet
+      </p>
     </div>
   );
 }
@@ -294,22 +314,6 @@ function LoadingState() {
   );
 }
 
-// ─── Empty State ─────────────────────────────────────────────────────────────
-
-function EmptyState({ classroomId }: { classroomId: string }) {
-    const navigate = useNavigate();
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-gray-300 gap-3 bg-white rounded-xl border border-dashed border-gray-200">
-      <span className="text-5xl">📚</span>
-      <p className="text-sm font-medium text-gray-400">No players found</p>
-      <p className="text-xs text-gray-300">
-        Classroom "{classroomId}" has no active players yet
-      </p>
-    <Button onClick={() => navigate("/classrooms")}>Go Back To Classrooms</Button>
-    </div>
-  );
-}
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ClassroomSection() {
@@ -317,7 +321,7 @@ export default function ClassroomSection() {
   const [analytics, setAnalytics] = useState<ClassroomAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -340,28 +344,41 @@ export default function ClassroomSection() {
     fetchClassroomPlayers();
   }, [classroomId]);
 
-  if (loading) return <LoadingState />;
-  if (error)
+  if (loading) {
     return (
-      <Card className="p-8">
-        <div className="flex flex-col items-center justify-center text-center gap-3">
-          <span className="text-4xl">⚠️</span>
-          <p className="text-sm font-medium text-red-500">{error}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.location.reload()}
-          >
-            <ArrowPathIcon className="w-4 h-4 mr-1" />
-            Retry
-          </Button>
-        </div>
-      </Card>
+      <DefaultLayout>
+        <LoadingState />
+      </DefaultLayout>
     );
-
-  if (!analytics || analytics.totalPlayers === 0) {
-    return <EmptyState classroomId={classroomId || ""} />;
   }
+
+  if (error) {
+    return (
+      <DefaultLayout>
+        <Card className="p-8">
+          <div className="flex flex-col items-center justify-center text-center gap-3">
+            <span className="text-4xl">⚠️</span>
+            <p className="text-sm font-medium text-red-500">{error}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.reload()}
+            >
+              <ArrowPathIcon className="w-4 h-4 mr-1" />
+              Retry
+            </Button>
+          </div>
+        </Card>
+      </DefaultLayout>
+    );
+  }
+
+  const hasPlayers = !!analytics && analytics.totalPlayers > 0;
+  const sortedPlayers = analytics
+    ? [...analytics.perPlayer].sort(
+        (a, b) => (b.accuracyPercentage ?? 0) - (a.accuracyPercentage ?? 0),
+      )
+    : [];
 
   return (
     <DefaultLayout>
@@ -383,37 +400,41 @@ export default function ClassroomSection() {
             See All My Students
           </Button>
         </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             icon={<UsersIcon className="w-5 h-5" />}
             label="Total Players"
-            value={analytics.totalPlayers}
+            value={analytics?.totalPlayers ?? 0}
             subtext="Enrolled students"
             color="emerald"
           />
           <StatCard
             icon={<ChartBarIcon className="w-5 h-5" />}
             label="Total Attempts"
-            value={analytics.totalAttempts}
-            subtext={`${analytics.totalCorrect} correct, ${analytics.totalWrong} wrong`}
+            value={analytics?.totalAttempts ?? 0}
+            subtext={`${analytics?.totalCorrect ?? 0} correct, ${
+              analytics?.totalWrong ?? 0
+            } wrong`}
             color="blue"
           />
           <StatCard
             icon={<TrophyIcon className="w-5 h-5" />}
             label="Overall Accuracy"
-            value={`${analytics.overallAccuracy}%`}
-            subtext={`${analytics.totalCorrectnessPercentage}% correctness`}
+            value={`${analytics?.overallAccuracy ?? 0}%`}
+            subtext={`${analytics?.totalCorrectnessPercentage ?? 0}% correctness`}
             color="purple"
           />
           <StatCard
             icon={<UserGroupIcon className="w-5 h-5" />}
             label="Trash Segregated"
-            value={analytics.totalTrashSegregated}
+            value={analytics?.totalTrashSegregated ?? 0}
             subtext="Total items sorted"
             color="yellow"
           />
         </div>
+
         {/* Bin Breakdown */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
@@ -430,37 +451,38 @@ export default function ClassroomSection() {
             <BinStatsCard
               icon="🟤"
               label="Biodegradable"
-              correct={analytics.biodegradableCorrect}
-              wrong={analytics.biodegradableWrong}
-              percentage={analytics.biodegradableCorrectnessPercentage}
+              correct={analytics?.biodegradableCorrect ?? 0}
+              wrong={analytics?.biodegradableWrong ?? 0}
+              percentage={analytics?.biodegradableCorrectnessPercentage ?? 0}
               color="border-amber-200 bg-amber-50/30"
             />
             <BinStatsCard
               icon="🔵"
               label="Recyclable"
-              correct={analytics.recyclableCorrect}
-              wrong={analytics.recyclableWrong}
-              percentage={analytics.recyclableCorrectnessPercentage}
+              correct={analytics?.recyclableCorrect ?? 0}
+              wrong={analytics?.recyclableWrong ?? 0}
+              percentage={analytics?.recyclableCorrectnessPercentage ?? 0}
               color="border-blue-200 bg-blue-50/30"
             />
             <BinStatsCard
               icon="⚫"
               label="Residual"
-              correct={analytics.residualCorrect}
-              wrong={analytics.residualWrong}
-              percentage={analytics.residualCorrectnessPercentage}
+              correct={analytics?.residualCorrect ?? 0}
+              wrong={analytics?.residualWrong ?? 0}
+              percentage={analytics?.residualCorrectnessPercentage ?? 0}
               color="border-gray-200 bg-gray-50/30"
             />
             <BinStatsCard
               icon="🟣"
               label="Special Waste"
-              correct={analytics.specialWasteCorrect}
-              wrong={analytics.specialWasteWrong}
-              percentage={analytics.specialWasteCorrectnessPercentage}
+              correct={analytics?.specialWasteCorrect ?? 0}
+              wrong={analytics?.specialWasteWrong ?? 0}
+              percentage={analytics?.specialWasteCorrectnessPercentage ?? 0}
               color="border-purple-200 bg-purple-50/30"
             />
           </div>
         </Card>
+
         {/* Player Leaderboard */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
@@ -469,22 +491,25 @@ export default function ClassroomSection() {
                 👥 Player Rankings
               </h2>
               <p className="text-xs text-[#64748B]">
-                {analytics.perPlayer.length} active player
-                {analytics.perPlayer.length !== 1 ? "s" : ""}
+                {sortedPlayers.length} active player
+                {sortedPlayers.length !== 1 ? "s" : ""}
               </p>
             </div>
           </div>
-          <div className="space-y-2">
-            {analytics.perPlayer
-              .sort((a, b) => b.accuracyPercentage - a.accuracyPercentage)
-              .map((player, index) => (
+
+          {hasPlayers ? (
+            <div className="space-y-2">
+              {sortedPlayers.map((player, index) => (
                 <PlayerRow
-                  key={player.username}
+                  key={player.studentId ?? player.username ?? index}
                   player={player}
                   rank={index + 1}
                 />
               ))}
-          </div>
+            </div>
+          ) : (
+            <EmptyRankings />
+          )}
         </Card>
       </div>
     </DefaultLayout>
