@@ -1,52 +1,10 @@
-import {
-  doc,
-  getDoc,
-  collection,
-  getDocs,
-  query,
-  where,
-  addDoc,
-  deleteDoc,
-  orderBy,
-  updateDoc,
-} from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../FirebaseConfig";
-import { getAuth } from "firebase/auth";
-import {} from "firebase/firestore";
-import type { ClassroomCode } from "../types/dashboardTypes";
-
-// Collections
-
 const playerCollectionName = "PlayerData";
+const classRoomCollectionName = "ClassroomCodes";
 
-
-export const getCurrentAdmin = async () => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-
-  if (!user) return null;
-
-  return { uid: user.uid };
-};
-
-export const getAdminName = async (uid: string) => {
-  const docRef = doc(db, playerCollectionName, uid);
-  const docSnap = await getDoc(docRef);
-
-  if (!docSnap.exists()) return null;
-
-  const data = docSnap.data();
-
-  return {
-    username: data.name as string,
-  };
-};
-
-export const getAllPlayers = async () => {
-  const q = query(
-    collection(db, playerCollectionName),
-    where("role", "==", "player"),
-  );
+export async function getAllClassrooms() {
+  const q = query(collection(db, classRoomCollectionName));
 
   const querySnapshot = await getDocs(q);
 
@@ -54,33 +12,15 @@ export const getAllPlayers = async () => {
     id: doc.id,
     ...doc.data(),
   }));
-};
+}
+// Shared helper: takes any array of player docs and returns the analytics shape
+const computeAnalytics = (
+  players: any[],
+  classroomMap?: Map<string, string>,
+) => {
+  const calcPercentage = (correct: number, total: number) =>
+    total > 0 ? parseFloat(((correct / total) * 100).toFixed(2)) : 0;
 
-export const getPlayerAnalytics = async () => {
-  const q = query(
-    collection(db, playerCollectionName),
-    where("role", "==", "player"),
-  );
-
-  const querySnapshot = await getDocs(q);
-  const players = querySnapshot.docs.map((doc) => doc.data());
-
-  const playerClassroom = players.filter((p) => p.classroomCode !== undefined);
-
-  const q2 = query(
-    collection(db, "ClassroomCodes"),
-    where(
-      "code",
-      "in",
-      playerClassroom.map((e) => e.classroomCode),
-    ),
-  );
-  const querySnapshot2 = await getDocs(q2);
-  const createdBy = querySnapshot2.docs.map((doc) => doc.data());
-
-  const classroomMap = new Map(createdBy.map((c) => [c.code, c.createdBy]));
-
-  // Pre-compute shared totals
   const totalAttempts = players.reduce(
     (sum, p) => sum + (p.totalAttempts ?? 0),
     0,
@@ -120,6 +60,7 @@ export const getPlayerAnalytics = async () => {
     0,
   );
   const residualTotal = residualCorrect + residualWrong;
+
   const specialWasteCorrect = players.reduce(
     (sum, p) => sum + (p.specialWasteCorrect ?? 0),
     0,
@@ -130,13 +71,9 @@ export const getPlayerAnalytics = async () => {
   );
   const specialWasteTotal = specialWasteCorrect + specialWasteWrong;
 
-  const calcPercentage = (correct: number, total: number) =>
-    total > 0 ? parseFloat(((correct / total) * 100).toFixed(2)) : 0;
-
-  const analytics = {
+  return {
     totalPlayers: players.length,
 
-    // Overall totals
     totalAttempts,
     totalCorrect,
     totalWrong,
@@ -146,7 +83,7 @@ export const getPlayerAnalytics = async () => {
       (sum, p) => sum + (p.totalTrashSegregated ?? 0),
       0,
     ),
-    // Biodegradable bin
+
     biodegradableCorrect,
     biodegradableWrong,
     biodegradableTotal,
@@ -155,7 +92,6 @@ export const getPlayerAnalytics = async () => {
       biodegradableTotal,
     ),
 
-    // Recyclable bin
     recyclableCorrect,
     recyclableWrong,
     recyclableTotal,
@@ -164,7 +100,6 @@ export const getPlayerAnalytics = async () => {
       recyclableTotal,
     ),
 
-    // Residual bin
     residualCorrect,
     residualWrong,
     residualTotal,
@@ -173,7 +108,6 @@ export const getPlayerAnalytics = async () => {
       residualTotal,
     ),
 
-    // Special Waste bin
     specialWasteCorrect,
     specialWasteWrong,
     specialWasteTotal,
@@ -182,7 +116,6 @@ export const getPlayerAnalytics = async () => {
       specialWasteTotal,
     ),
 
-    // Per-player breakdown
     perPlayer: players.map((p) => ({
       studentId: p.studentId,
       studentName: p.studentName,
@@ -217,84 +150,67 @@ export const getPlayerAnalytics = async () => {
           (p.residualCorrect ?? 0) + (p.residualWrong ?? 0),
         ),
       },
+      specialWaste: {
+        correct: p.specialWasteCorrect ?? 0,
+        wrong: p.specialWasteWrong ?? 0,
+        percentage: calcPercentage(
+          p.specialWasteCorrect ?? 0,
+          (p.specialWasteCorrect ?? 0) + (p.specialWasteWrong ?? 0),
+        ),
+      },
       classroomcode: p.classroomCode,
-      createdBy: classroomMap.get(p.classroomCode) ?? null,
+      createdBy: classroomMap?.get(p.classroomCode) ?? null,
     })),
   };
-
-  return analytics;
 };
 
-// Generate a random classroom code
-const generateRandomCode = (): string => {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "";
-  for (let i = 0; i < 8; i++) {
-    code += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return code;
+export const getPlayerAnalytics = async () => {
+  const q = query(
+    collection(db, playerCollectionName),
+    where("role", "==", "player"),
+  );
+
+  const querySnapshot = await getDocs(q);
+  const players = querySnapshot.docs.map((doc) => doc.data());
+
+  const playerClassroom = players.filter((p) => p.classroomCode !== undefined);
+
+  const q2 = query(
+    collection(db, "ClassroomCodes"),
+    where(
+      "code",
+      "in",
+      playerClassroom.map((e) => e.classroomCode),
+    ),
+  );
+  const querySnapshot2 = await getDocs(q2);
+  const createdBy = querySnapshot2.docs.map((doc) => doc.data());
+
+  const classroomMap = new Map(createdBy.map((c) => [c.code, c.createdBy]));
+
+  return computeAnalytics(players, classroomMap);
 };
 
-// Create a new classroom code
-export const createClassroomCode = async (
-  uid: string,
-  classroomName: string,
-): Promise<string> => {
-  const currentAdmin = await getAdminName(uid);
+export async function getPlayerAnalyticsByClassCode(classroomCode: string) {
+  const q = query(
+    collection(db, playerCollectionName),
+    where("role", "==", "player"),
+    where("classroomCode", "==", classroomCode),
+  );
 
-  const newCode = generateRandomCode();
+  const querySnapshot = await getDocs(q);
+  const players = querySnapshot.docs.map((doc) => doc.data());
 
-  const codeData = {
-    code: newCode,
-    classroomName,
-    isActive: true,
-    createdBy: currentAdmin?.username,
-    createdAt: new Date().toISOString(),
-  };
+  // Everyone here already has the same classroomCode, so createdBy is just one lookup
+  const classroomQuery = query(
+    collection(db, "ClassroomCodes"),
+    where("code", "==", classroomCode),
+  );
+  const classroomSnapshot = await getDocs(classroomQuery);
+  const classroomDoc = classroomSnapshot.docs[0]?.data();
+  const classroomMap = classroomDoc
+    ? new Map([[classroomDoc.code, classroomDoc.createdBy]])
+    : new Map();
 
-  await addDoc(collection(db, "ClassroomCodes"), codeData);
-
-  return newCode;
-};
-
-// Get all classroom codes
-export const getClassroomCodes = async (): Promise<ClassroomCode[]> => {
-  try {
-    const codesRef = collection(db, "ClassroomCodes");
-    const q = query(codesRef, orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as ClassroomCode[];
-  } catch (error) {
-    console.error("Error fetching classroom codes:", error);
-    throw error;
-  }
-};
-
-// Update code status (active/disabled)
-export const updateCodeStatus = async (
-  codeId: string,
-  isActive: boolean,
-): Promise<void> => {
-  try {
-    const codeRef = doc(db, "ClassroomCodes", codeId);
-    await updateDoc(codeRef, { isActive });
-  } catch (error) {
-    console.error("Error updating code status:", error);
-    throw error;
-  }
-};
-
-// Delete a classroom code
-export const deleteCode = async (codeId: string): Promise<void> => {
-  try {
-    const codeRef = doc(db, "ClassroomCodes", codeId);
-    await deleteDoc(codeRef);
-  } catch (error) {
-    console.error("Error deleting code:", error);
-    throw error;
-  }
-};
+  return computeAnalytics(players, classroomMap);
+}
