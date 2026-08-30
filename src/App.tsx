@@ -1,11 +1,13 @@
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
-import ClassroomCodes from "./pages/ClassroomCodes";
+import Classrooms from "./pages/Classrooms";
+import ClassroomSection from "./pages/ClassroomSection";
 import ProtectedRoute from "./protection/ProtectedRoute";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminProvider from "./context/AdminProvider";
 import Reports from "./pages/Reports";
+import ClassPlayers from "./pages/ClassPlayers";
 
 function App() {
   return (
@@ -34,14 +36,33 @@ function App() {
             ></Route>
 
             <Route
-              path="/dashboard/classroom-codes"
+              path="/classrooms"
               element={
                 <ProtectedRoute>
-                  <ClassroomCodes />
+                  <Classrooms />
                 </ProtectedRoute>
               }
             ></Route>
 
+            {/* Sub-Routes */}
+            <Route
+              path="/classrooms/:classroomId"
+              element={
+                <ProtectedRoute>
+                  <ClassroomSection />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route 
+              path="/classrooms/:classroomId/mystudents"
+              element={
+                <ProtectedRoute>
+                  <ClassPlayers/>
+                </ProtectedRoute>
+              }
+              />
+              
             <Route
               path="/dashboard/reports"
               element={
@@ -49,7 +70,7 @@ function App() {
                   <Reports />
                 </ProtectedRoute>
               }
-            ></Route>
+            />
           </Routes>
         </BrowserRouter>
       </AdminProvider>

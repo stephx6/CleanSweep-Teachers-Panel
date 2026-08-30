@@ -49,15 +49,15 @@ export default function Aside({ onClose }: AsideProps) {
           <li>
             <Button
               variant={
-                isActive("/dashboard/classroom-codes") ? "primary" : "ghost"
+                isActive("/classrooms") ? "primary" : "ghost"
               }
               className="w-full justify-start"
               leftIcon={<PencilIcon className="w-5 h-5" />}
               onClick={() => {
-                navigate("/dashboard/classroom-codes");
+                navigate("/classrooms");
               }}
             >
-              Classroom Codes
+              Classrooms
             </Button>
           </li>
 

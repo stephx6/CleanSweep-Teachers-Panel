@@ -18,6 +18,7 @@ import type { ClassroomCode } from "../types/dashboardTypes";
 // Collections
 
 const playerCollectionName = "PlayerData";
+const classRoomCollectionName = "ClassroomCodes";
 
 export const getCurrentAdmin = async () => {
   const auth = getAuth();
@@ -222,6 +223,8 @@ export const getPlayerAnalytics = async () => {
   return analytics;
 };
 
+
+
 // Generate a random classroom code
 const generateRandomCode = (): string => {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -238,8 +241,6 @@ export const createClassroomCode = async (
   classroomName: string,
 ): Promise<string> => {
   const currentAdmin = await getAdminName(uid);
-
-  console.log(currentAdmin);
 
   const newCode = generateRandomCode();
 
