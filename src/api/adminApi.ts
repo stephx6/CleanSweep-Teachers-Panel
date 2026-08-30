@@ -18,7 +18,7 @@ import type { ClassroomCode } from "../types/dashboardTypes";
 // Collections
 
 const playerCollectionName = "PlayerData";
-const classRoomCollectionName = "ClassroomCodes";
+
 
 export const getCurrentAdmin = async () => {
   const auth = getAuth();
