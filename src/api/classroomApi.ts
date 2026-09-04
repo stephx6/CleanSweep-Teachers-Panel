@@ -201,16 +201,21 @@ export async function getPlayerAnalyticsByClassCode(classroomCode: string) {
   const querySnapshot = await getDocs(q);
   const players = querySnapshot.docs.map((doc) => doc.data());
 
-  // Everyone here already has the same classroomCode, so createdBy is just one lookup
   const classroomQuery = query(
     collection(db, "ClassroomCodes"),
     where("code", "==", classroomCode),
   );
   const classroomSnapshot = await getDocs(classroomQuery);
   const classroomDoc = classroomSnapshot.docs[0]?.data();
+
   const classroomMap = classroomDoc
     ? new Map([[classroomDoc.code, classroomDoc.createdBy]])
     : new Map();
 
-  return computeAnalytics(players, classroomMap);
+  const analytics = computeAnalytics(players, classroomMap);
+
+  return {
+    ...analytics,
+    classroomName: classroomDoc?.classroomName ?? null,
+  };
 }

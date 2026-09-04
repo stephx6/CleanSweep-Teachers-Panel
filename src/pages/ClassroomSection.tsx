@@ -63,6 +63,7 @@ interface ClassroomAnalytics {
   specialWasteWrong: number;
   specialWasteTotal: number;
   specialWasteCorrectnessPercentage: number;
+  classroomName : string;
   perPlayer: PlayerRowData[];
 }
 
@@ -379,7 +380,7 @@ export default function ClassroomSection() {
         (a, b) => (b.accuracyPercentage ?? 0) - (a.accuracyPercentage ?? 0),
       )
     : [];
-
+    
   return (
     <DefaultLayout>
       <div className="space-y-6">
@@ -388,7 +389,7 @@ export default function ClassroomSection() {
           <div>
             <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-2">
               <span>🏫</span>
-              {classroomId}
+              {analytics?.classroomName}
             </h1>
             <p className="text-sm text-[#64748B] mt-1">
               Classroom analytics and student performance
