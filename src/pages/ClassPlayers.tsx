@@ -248,6 +248,17 @@ export default function ClassPlayers() {
   return (
     <DefaultLayout>
       <div className="space-y-4">
+        <div className="-ml-6 sm:-ml-8">
+          <Button
+            variant="primary"
+            size="md"
+            leftIcon={<ArrowLeftIcon className="h-5 w-5" />}
+            onClick={() => navigate(-1)}
+          >
+            Return
+          </Button>
+        </div>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -255,13 +266,11 @@ export default function ClassPlayers() {
               <span>👨‍🎓</span>
               Students
             </h1>
-
             <p className="text-sm text-[#64748B] mt-1">
               {players.length} student
               {players.length !== 1 ? "s" : ""} enrolled
             </p>
           </div>
-
           <Button
             variant="primary"
             size="md"
@@ -281,9 +290,7 @@ export default function ClassPlayers() {
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
               {/* Desktop Table */}
               <div className="hidden md:block overflow-x-auto">
-                <div className="absolute left-70 top-28">
-                  <Button variant="primary" size="md" leftIcon={<ArrowLeftIcon className="h-5 w-5" />} onClick={() => navigate(-1)}>Return</Button>
-                </div>
+               
                 <table className="w-full">
                   <thead>
                     <tr className="bg-[#F8FAFC] border-b border-[#BBF7D0]">

@@ -386,8 +386,8 @@ export default function ClassroomSection() {
     <DefaultLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="absolute left-70 top-22">
+        <div className="space-y-3">
+          <div className="-ml-4 sm:-ml-4">
             <Button
               variant="primary"
               size="md"
@@ -397,20 +397,23 @@ export default function ClassroomSection() {
               Return
             </Button>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-2">
-              <span>🏫</span>
-              {analytics?.classroomName}
-            </h1>
-            <p className="text-sm text-[#64748B] mt-1">
-              Classroom analytics and student performance
-            </p>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-2">
+                <span>🏫</span>
+                {analytics?.classroomName}
+              </h1>
+              <p className="text-sm text-[#64748B] mt-1">
+                Classroom analytics and student performance
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate(`/classrooms/${classroomId}/mystudents`)}
+            >
+              See All My Students
+            </Button>
           </div>
-          <Button
-            onClick={() => navigate(`/classrooms/${classroomId}/mystudents`)}
-          >
-            See All My Students
-          </Button>
         </div>
 
         {/* Stats Grid */}
