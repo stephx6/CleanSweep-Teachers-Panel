@@ -63,11 +63,11 @@ export default function Aside({ onClose }: AsideProps) {
 
           <li>
             <Button
-              variant={isActive("/dashboard/students") ? "primary" : "ghost"}
+              variant={isActive("/students") ? "primary" : "ghost"}
               className="w-full justify-start"
               leftIcon={<UsersIcon className="w-5 h-5" />}
               onClick={() => {
-                navigate("/dashboard/students");
+                navigate("/students");
               }}
             >
               Student List
@@ -76,11 +76,11 @@ export default function Aside({ onClose }: AsideProps) {
 
           <li>
             <Button
-              variant={isActive("/dashboard/reports") ? "primary" : "ghost"}
+              variant={isActive("/reports") ? "primary" : "ghost"}
               className="w-full justify-start"
               leftIcon={<BookOpenIcon className="w-5 h-5" />}
               onClick={() => {
-                navigate("/dashboard/reports");
+                navigate("/reports");
               }}
             >
               Reports
