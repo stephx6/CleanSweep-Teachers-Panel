@@ -45,8 +45,8 @@ interface ClassStats {
   residualCorrect: number;
   residualWrong: number;
 
-  specialWasteCorrect: number; // ADD
-  specialWasteWrong: number; // ADD
+  specialWasteCorrect: number;
+  specialWasteWrong: number;
 
   createdBy: string;
 }
@@ -54,20 +54,20 @@ interface ClassStats {
 // ─── Color Tokens ─────────────────────────────────────────────────────────────
 
 const COLORS = {
-  correct: "#10b981", // emerald-500
-  correctLight: "#34d399", // emerald-400
-  correctBg: "#d1fae5", // emerald-100
-  correctBorder: "#6ee7b7", // emerald-300
-  wrong: "#ef4444", // red-500
-  wrongLight: "#fca5a5", // red-300
-  wrongBg: "#fee2e2", // red-100
-  pageBg: "#f0fdf4", // green-50
-  border: "#a7f3d0", // emerald-200
-  textMuted: "#9ca3af", // gray-400
-  textDark: "#1f2937", // gray-800
-  textMid: "#4b5563", // gray-600
-  chartGrid: "#ecfdf5", // emerald-50
-  tooltipBorder: "#6ee7b7", // emerald-300
+  correct: "#10b981",
+  correctLight: "#34d399",
+  correctBg: "#d1fae5",
+  correctBorder: "#6ee7b7",
+  wrong: "#ef4444",
+  wrongLight: "#fca5a5",
+  wrongBg: "#fee2e2",
+  pageBg: "#f0fdf4",
+  border: "#a7f3d0",
+  textMuted: "#9ca3af",
+  textDark: "#1f2937",
+  textMid: "#4b5563",
+  chartGrid: "#ecfdf5",
+  tooltipBorder: "#6ee7b7",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -157,6 +157,30 @@ function ClassPieChart({ percentage }: { percentage: number }) {
 
 // ─── Bar Chart ────────────────────────────────────────────────────────────────
 
+// Custom tick renderer: wraps multi-word bin labels onto two lines so
+// "Special Waste" / "Biodegradable" don't get clipped or overlap.
+function BinAxisTick({ x, y, payload }: any) {
+  const words = String(payload.value).split(" ");
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {words.map((word: string, i: number) => (
+        <text
+          key={i}
+          x={0}
+          y={0}
+          dy={14 + i * 13}
+          textAnchor="middle"
+          fontSize={11}
+          fill={COLORS.textMuted}
+        >
+          {word}
+        </text>
+      ))}
+    </g>
+  );
+}
+
 function ClassBarChart({ stats }: { stats: ClassStats }) {
   const data = [
     {
@@ -196,17 +220,17 @@ function ClassBarChart({ stats }: { stats: ClassStats }) {
         </span>
       </div>
 
-      <ResponsiveContainer width="100%" height={220}>
+      <ResponsiveContainer width="100%" height={300}>
         <BarChart
           data={data}
           margin={{
             top: 8,
-            right: 8,
-            left: -15,
-            bottom: 20,
+            right: 16,
+            left: 0,
+            bottom: 0,
           }}
-          barGap={4}
-          barCategoryGap="20%"
+          barGap={6}
+          barCategoryGap="30%"
         >
           <CartesianGrid
             strokeDasharray="3 3"
@@ -216,31 +240,29 @@ function ClassBarChart({ stats }: { stats: ClassStats }) {
 
           <XAxis
             dataKey="bin"
-            tick={{
-              fontSize: 9,
-              fill: COLORS.textMuted,
-            }}
+            tick={<BinAxisTick />}
             axisLine={false}
             tickLine={false}
             interval={0}
-            height={45}
+            height={46}
           />
 
           <YAxis
             tick={{
-              fontSize: 10,
+              fontSize: 11,
               fill: COLORS.textMuted,
             }}
             axisLine={false}
             tickLine={false}
             allowDecimals={false}
+            width={32}
           />
 
           <Tooltip
             contentStyle={{
               borderRadius: "8px",
               border: `1px solid ${COLORS.tooltipBorder}`,
-              fontSize: "11px",
+              fontSize: "12px",
               backgroundColor: "#fff",
             }}
             cursor={{ fill: COLORS.chartGrid }}
@@ -248,10 +270,10 @@ function ClassBarChart({ stats }: { stats: ClassStats }) {
 
           <Legend
             iconType="circle"
-            iconSize={7}
+            iconSize={8}
             wrapperStyle={{
-              fontSize: "10px",
-              paddingTop: "6px",
+              fontSize: "11px",
+              paddingTop: "10px",
             }}
           />
 
@@ -325,25 +347,21 @@ function ClassCard({ stats }: { stats: ClassStats }) {
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="p-5 flex flex-col sm:flex-row gap-6 items-center flex-1">
+      {/* Charts — stacked vertically so the bar chart gets full card width */}
+      <div className="p-5 flex flex-col gap-5 flex-1">
         {/* Pie */}
-        <div className="flex-shrink-0">
+        <div className="flex justify-center">
           <ClassPieChart percentage={stats.correctnessPercentage} />
         </div>
 
         {/* Divider */}
         <div
-          className="hidden sm:block w-px self-stretch"
-          style={{ backgroundColor: COLORS.border }}
-        />
-        <div
-          className="block sm:hidden h-px w-full"
+          className="h-px w-full"
           style={{ backgroundColor: COLORS.border }}
         />
 
-        {/* Bar */}
-        <div className="flex-1 w-full min-w-0">
+        {/* Bar — now full width */}
+        <div className="w-full min-w-0">
           <ClassBarChart stats={stats} />
         </div>
       </div>
@@ -443,7 +461,7 @@ export default function ClassAnalytics() {
 
     const map = new Map<string, ClassStats>();
 
-    totalPlayers.forEach((p) => {
+    totalPlayers.forEach((p: any) => {
       // Skip players with no classroom code entirely — don't group them
       if (!p.classroomCode) return;
 
@@ -469,8 +487,8 @@ export default function ClassAnalytics() {
           residualCorrect: 0,
           residualWrong: 0,
 
-          specialWasteCorrect: 0, // ADD
-          specialWasteWrong: 0, // ADD
+          specialWasteCorrect: 0,
+          specialWasteWrong: 0,
 
           createdBy: meta?.createdBy ?? "Unknown",
         });
@@ -522,9 +540,9 @@ export default function ClassAnalytics() {
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {loading ? (
-          [1, 2, 3].map((i) => <SkeletonCard key={i} />)
+          [1, 2].map((i) => <SkeletonCard key={i} />)
         ) : classStats.length === 0 ? (
           <EmptyState />
         ) : (

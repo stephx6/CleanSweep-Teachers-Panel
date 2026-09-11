@@ -18,7 +18,7 @@ import type { ClassroomCode } from "../types/dashboardTypes";
 // Collections
 
 const playerCollectionName = "PlayerData";
-
+const classRoomCollectionName = "ClassroomCodes";
 
 export const getCurrentAdmin = async () => {
   const auth = getAuth();
@@ -43,16 +43,50 @@ export const getAdminName = async (uid: string) => {
 };
 
 export const getAllPlayers = async () => {
-  const q = query(
-    collection(db, playerCollectionName),
-    where("role", "==", "player"),
+  const playersSnapshot = await getDocs(
+    query(collection(db, playerCollectionName), where("role", "==", "player")),
   );
 
-  const querySnapshot = await getDocs(q);
-
-  return querySnapshot.docs.map((doc) => ({
+  const players = playersSnapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
+  }));
+
+  // Get unique classroom codes actually in use (field is "classroomCode" on player docs)
+  const codes = [
+    ...new Set(players.map((p: any) => p.classroomCode).filter(Boolean)),
+  ];
+
+  if (codes.length === 0) return players;
+
+  // Firestore 'in' queries support max 30 values per query
+  const chunks = [];
+  for (let i = 0; i < codes.length; i += 30) {
+    chunks.push(codes.slice(i, i + 30));
+  }
+
+  const classroomSnapshots = await Promise.all(
+    chunks.map((chunk) =>
+      getDocs(
+        query(
+          collection(db, classRoomCollectionName),
+          where("code", "in", chunk), 
+        ),
+      ),
+    ),
+  );
+
+  const classroomMap = new Map();
+  classroomSnapshots.forEach((snap) =>
+    snap.docs.forEach((doc) => {
+      const data = doc.data();
+      classroomMap.set(data.code, data.classroomName); // <-- key by "code"
+    }),
+  );
+
+  return players.map((p: any) => ({
+    ...p,
+    classroomName: classroomMap.get(p.classroomCode) ?? null, // lookup still by player's classroomCode value
   }));
 };
 

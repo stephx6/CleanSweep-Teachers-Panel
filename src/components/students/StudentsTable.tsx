@@ -114,31 +114,32 @@ type SortMode = "default" | "accuracy_desc" | "accuracy_asc";
 export default function StudentsTable() {
   const { totalPlayers, loading } = usePlayerTotalLength();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [selectedCode, setSelectedCode] = useState<string>("all");
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [selectedClassroom, setSelectedClassroom] = useState<string>("all");
   const [sortMode, setSortMode] = useState<SortMode>("default");
   const [showFilters, setShowFilters] = useState(false);
 
-  // ── Unique classroom codes from data ──
-  const classroomCodes = useMemo(() => {
+  // ── Unique classroom names from data ──
+  const classroomNames = useMemo(() => {
     if (!totalPlayers) return [];
-    const codes = totalPlayers
-      .map((p) => p.classroomCode)
+    const names = totalPlayers
+      .map((p: any) => p.classroomName)
       .filter(Boolean) as string[];
-    return ["all", ...Array.from(new Set(codes))];
+    return ["all", ...Array.from(new Set(names))];
   }, [totalPlayers]);
 
   // ── Filter + Sort ──
   const filteredPlayers = useMemo(() => {
     if (!totalPlayers) return [];
 
-    let result = totalPlayers.filter((player) => {
+    let result = totalPlayers.filter((player: any) => {
       const matchesName = player.username
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase());
-      const matchesCode =
-        selectedCode === "all" || player.classroomCode === selectedCode;
-      return matchesName && matchesCode;
+      const matchesClassroom =
+        selectedClassroom === "all" ||
+        player.classroomName === selectedClassroom;
+      return matchesName && matchesClassroom;
     });
 
     if (sortMode === "accuracy_desc") {
@@ -151,22 +152,23 @@ export default function StudentsTable() {
       );
     } else {
       result = [...result].sort((a, b) => {
-        const codeA = a.classroomCode ?? "";
-        const codeB = b.classroomCode ?? "";
-        return codeA.localeCompare(codeB);
+        const nameA = a.classroomName ?? "";
+        const nameB = b.classroomName ?? "";
+        return nameA.localeCompare(nameB);
       });
     }
 
     return result;
-  }, [totalPlayers, searchTerm, selectedCode, sortMode]);
+  }, [totalPlayers, searchTerm, selectedClassroom, sortMode]);
 
   // ── Active filter count (for badge) ──
-  const activeFilters = [selectedCode !== "all", sortMode !== "default"].filter(
-    Boolean,
-  ).length;
+  const activeFilters = [
+    selectedClassroom !== "all",
+    sortMode !== "default",
+  ].filter(Boolean).length;
 
   const clearFilters = () => {
-    setSelectedCode("all");
+    setSelectedClassroom("all");
     setSortMode("default");
   };
 
@@ -218,24 +220,24 @@ export default function StudentsTable() {
       {/* ── Filter Panel ── */}
       {showFilters && (
         <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-100 flex flex-col sm:flex-row gap-4">
-          {/* Classroom Code Filter */}
+          {/* Classroom Name Filter */}
           <div className="flex-1">
             <p className="text-xs font-semibold text-gray-500 mb-2">
-              🏫 Classroom Code
+              🏫 Classroom
             </p>
             <div className="flex flex-wrap gap-2">
-              {classroomCodes.map((code) => (
+              {classroomNames.map((name) => (
                 <button
-                  key={code}
-                  onClick={() => setSelectedCode(code)}
+                  key={name}
+                  onClick={() => setSelectedClassroom(name)}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all duration-150
                     ${
-                      selectedCode === code
+                      selectedClassroom === name
                         ? "bg-emerald-500 text-white border-emerald-500"
                         : "bg-white text-gray-600 border-gray-200 hover:border-emerald-300 hover:text-emerald-600"
                     }`}
                 >
-                  {code === "all" ? "All Codes" : code}
+                  {name === "all" ? "All Classrooms" : name}
                 </button>
               ))}
             </div>
@@ -323,7 +325,7 @@ export default function StudentsTable() {
                     Envirocoins
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
-                    Classroom Code
+                    Classroom Name
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
                     Actions
@@ -331,7 +333,7 @@ export default function StudentsTable() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPlayers.map((player, key) => (
+                {filteredPlayers.map((player: any, key: number) => (
                   <tr
                     key={key}
                     className="border-b border-[#F0FDF4] hover:bg-[#F0FDF4] transition-colors"
@@ -397,7 +399,7 @@ export default function StudentsTable() {
 
                     <td className="py-3 px-4">
                       <span className="font-mono text-xs bg-gray-100 border border-gray-200 px-2 py-1 rounded-lg text-gray-600">
-                        {player.classroomCode ?? "N/A"}
+                        {player.classroomName ?? "N/A"}
                       </span>
                     </td>
 
@@ -418,7 +420,7 @@ export default function StudentsTable() {
 
           {/* Mobile View */}
           <div className="md:hidden space-y-3">
-            {filteredPlayers.map((player, key) => (
+            {filteredPlayers.map((player: any, key: number) => (
               <div
                 key={key}
                 className="bg-[#F8FAFC] rounded-xl p-4 hover:bg-[#F0FDF4] transition-colors"
@@ -437,9 +439,9 @@ export default function StudentsTable() {
                         <span className="text-xs text-[#64748B]">
                           {player.envirocoins || 0} coins
                         </span>
-                        {player.classroomCode && (
+                        {player.classroomName && (
                           <span className="font-mono text-[10px] bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded text-gray-500">
-                            {player.classroomCode}
+                            {player.classroomName}
                           </span>
                         )}
                       </div>
@@ -507,7 +509,8 @@ export default function StudentsTable() {
             Showing {filteredPlayers.length} student
             {filteredPlayers.length !== 1 ? "s" : ""}
             {searchTerm && ` matching "${searchTerm}"`}
-            {selectedCode !== "all" && ` in class ${selectedCode}`}
+            {selectedClassroom !== "all" &&
+              ` in classroom ${selectedClassroom}`}
           </p>
         </div>
       )}

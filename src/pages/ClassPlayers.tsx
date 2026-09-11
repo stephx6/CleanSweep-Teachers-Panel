@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { getPlayerAnalyticsByClassCode } from "../api/classroomApi";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/InputField";
-import { UserPlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, UserPlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { addStudents } from "../api/studentApi";
 import DefaultLayout from "../layout/DefaultLayout";
 
@@ -26,6 +26,8 @@ interface Player {
   accuracyPercentage: number;
   totalTrashSegregated: number;
   envirocoins: number;
+  pretestAccuracy : number;
+  posttestAccuracy : number;
   biodegradable: PlayerBinStats;
   recyclable: PlayerBinStats;
   residual: PlayerBinStats;
@@ -179,6 +181,8 @@ export default function ClassPlayers() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const navigate = useNavigate();
+
   const fetchPlayers = async () => {
     if (!classroomId) return;
 
@@ -186,7 +190,7 @@ export default function ClassPlayers() {
       setLoading(true);
 
       const data = await getPlayerAnalyticsByClassCode(classroomId);
-
+      console.log(data);
       setPlayers(data.perPlayer || []);
     } catch (error) {
       console.error("Failed to fetch classroom players:", error);
@@ -277,6 +281,9 @@ export default function ClassPlayers() {
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
               {/* Desktop Table */}
               <div className="hidden md:block overflow-x-auto">
+                <div className="absolute left-70 top-28">
+                  <Button variant="primary" size="md" leftIcon={<ArrowLeftIcon className="h-5 w-5" />} onClick={() => navigate(-1)}>Return</Button>
+                </div>
                 <table className="w-full">
                   <thead>
                     <tr className="bg-[#F8FAFC] border-b border-[#BBF7D0]">
@@ -294,6 +301,12 @@ export default function ClassPlayers() {
                       </th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
                         Bin Breakdown
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
+                        Pre-test Score
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
+                        Post-test Score
                       </th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-[#14532D]">
                         Segregated
@@ -396,6 +409,16 @@ export default function ClassPlayers() {
                                 color="bg-purple-50 border-purple-200 text-purple-700"
                               />
                             </div>
+                          </td>
+
+                          {/* Pretest */}
+                          <td className="py-3 px-4 font-mono text-sm text-[#64748B]">
+                            {player.pretestAccuracy ?? 0}%
+                          </td>
+
+                          {/* Posttest */}
+                          <td className="py-3 px-4 font-mono text-sm text-[#64748B]">
+                            {player.posttestAccuracy ?? 0}%
                           </td>
 
                           {/* Segregated */}

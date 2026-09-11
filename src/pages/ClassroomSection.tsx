@@ -9,6 +9,7 @@ import {
   ChartBarIcon,
   ArrowPathIcon,
   UserGroupIcon,
+  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import DefaultLayout from "../layout/DefaultLayout";
 
@@ -386,6 +387,16 @@ export default function ClassroomSection() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="absolute left-70 top-22">
+            <Button
+              variant="primary"
+              size="md"
+              leftIcon={<ArrowLeftIcon className="h-5 w-5" />}
+              onClick={() => navigate(-1)}
+            >
+              Return
+            </Button>
+          </div>
           <div>
             <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-2">
               <span>🏫</span>
@@ -485,7 +496,7 @@ export default function ClassroomSection() {
         </Card>
 
         {/* Player Leaderboard */}
-        <Card className="p-6">
+        <Card className="p-6 mx-10">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-base font-bold text-[#0F172A]">
