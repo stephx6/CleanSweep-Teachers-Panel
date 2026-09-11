@@ -126,6 +126,8 @@ const computeAnalytics = (
       accuracyPercentage: p.accuracyPercentage ?? 0,
       totalTrashSegregated: p.totalTrashSegregated ?? 0,
       envirocoins: p.envirocoins ?? 0,
+      pretestAccuracy : Math.round((p.pretestAccuracy) ?? 0 * 100) / 100,
+      posttestAccuracy : Math.round((p.posttestAccuracy ?? 0) * 100) / 100,
       biodegradable: {
         correct: p.biodegradableCorrect ?? 0,
         wrong: p.biodegradableWrong ?? 0,
