@@ -1,4 +1,5 @@
 import Login from "./pages/Login";
+import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Classrooms from "./pages/Classrooms";
@@ -15,8 +16,8 @@ function App() {
       <AdminProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Login />}></Route>
-
+            <Route path="/" element={<Login />} />
+            <Route path="/signup" element={<SignUp/>}/>
             <Route
               path="/dashboard"
               element={
