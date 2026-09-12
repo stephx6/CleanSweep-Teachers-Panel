@@ -1,11 +1,11 @@
-import LoginLayout from "../layout/LoginLayout";
+import AuthLayout from "../layout/AuthLayout";
 import LoginForm from "../features/auth/LoginForm";
 export default function Login() {
   return (
     <>
-      <LoginLayout>
-        <LoginForm/>
-      </LoginLayout>
+      <AuthLayout>
+        <LoginForm />
+      </AuthLayout>
     </>
   );
 }
