@@ -55,6 +55,8 @@ export interface PlayerAnalytics {
   specialWasteWrong: number;
   specialWasteTotal: number;
   specialWasteCorrectnessPercentage: number;
+
+
 }
 
 export interface PlayerAnalyticsCardsProps {
