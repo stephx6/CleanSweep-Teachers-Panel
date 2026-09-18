@@ -36,7 +36,6 @@ interface PlayerRowData {
   residual: PlayerBinStats;
   classroomcode?: string;
   createdBy: string | null;
-  // specialWaste is not in the original type, so we make it optional
   specialWaste?: PlayerBinStats;
 }
 
@@ -64,7 +63,7 @@ interface ClassroomAnalytics {
   specialWasteWrong: number;
   specialWasteTotal: number;
   specialWasteCorrectnessPercentage: number;
-  classroomName : string;
+  classroomName: string;
   perPlayer: PlayerRowData[];
 }
 
@@ -92,20 +91,20 @@ function StatCard({
   };
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-3">
+    <Card className="p-5 shadow-sm border border-gray-100 h-full flex flex-col justify-center">
+      <div className="flex items-center gap-4">
         <div
-          className={`w-10 h-10 rounded-xl ${colorClasses[color]} flex items-center justify-center shrink-0`}
+          className={`w-12 h-12 rounded-xl ${colorClasses[color]} flex items-center justify-center shrink-0`}
         >
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-[#64748B] uppercase tracking-wider">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">
             {label}
           </p>
-          <p className="text-xl font-bold text-[#0F172A]">{value}</p>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{value}</p>
           {subtext && (
-            <p className="text-xs text-[#64748B] mt-0.5">{subtext}</p>
+            <p className="text-xs text-gray-400 truncate">{subtext}</p>
           )}
         </div>
       </div>
@@ -133,14 +132,14 @@ function BinStatsCard({
   const total = correct + wrong;
 
   return (
-    <div className={`p-4 rounded-xl border ${color} bg-white`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{icon}</span>
-          <span className="text-sm font-semibold text-[#0F172A]">{label}</span>
+    <div className={`p-4 rounded-xl border ${color} bg-white shadow-sm`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xl shrink-0">{icon}</span>
+          <span className="text-sm font-bold text-gray-800 truncate">{label}</span>
         </div>
         <span
-          className={`text-sm font-bold px-2 py-0.5 rounded-full bg-white/70 ${
+          className={`text-sm font-bold px-2.5 py-0.5 rounded-full bg-white shadow-sm border border-gray-100 ${
             percentage >= 75
               ? "text-emerald-600"
               : percentage >= 50
@@ -151,12 +150,12 @@ function BinStatsCard({
           {percentage}%
         </span>
       </div>
-      <div className="flex items-center gap-4 text-xs text-[#64748B]">
+      <div className="flex items-center justify-between text-xs text-gray-500 mb-3 font-medium">
         <span>✅ {correct}</span>
         <span>❌ {wrong}</span>
-        <span>📊 {total} total</span>
+        <span>📊 {total}</span>
       </div>
-      <div className="mt-2 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+      <div className="h-2 w-full bg-gray-200/50 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-500 ${
             percentage >= 75
@@ -176,90 +175,92 @@ function BinStatsCard({
 
 function PlayerRow({ player, rank }: { player: PlayerRowData; rank: number }) {
   const isTop3 = rank <= 3;
-
-  // Safely access specialWaste with fallback
   const specialWastePercentage = player.specialWaste?.percentage ?? 0;
-
-  // Newly-added students have no username until the game assigns one
   const displayName = player.username || player.studentName || "Unclaimed";
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+      className={`flex items-center gap-3 sm:gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 ${
         isTop3
-          ? "bg-gradient-to-r from-[#f0fdf4] to-white border border-[#BBF7D0]"
-          : "bg-gray-50 border border-gray-100 hover:border-[#BBF7D0]"
+          ? "bg-gradient-to-r from-emerald-50 to-white border border-emerald-100 shadow-sm"
+          : "bg-gray-50 border border-gray-100 hover:border-emerald-200"
       }`}
     >
       {/* Rank */}
-      <div className="shrink-0 w-8 text-center">
-        {rank === 1 && <span className="text-lg">🥇</span>}
-        {rank === 2 && <span className="text-lg">🥈</span>}
-        {rank === 3 && <span className="text-lg">🥉</span>}
+      <div className="shrink-0 w-6 sm:w-8 text-center flex items-center justify-center">
+        {rank === 1 && <span className="text-xl">🥇</span>}
+        {rank === 2 && <span className="text-xl">🥈</span>}
+        {rank === 3 && <span className="text-xl">🥉</span>}
         {rank > 3 && (
-          <span className="text-xs font-semibold text-gray-400">#{rank}</span>
+          <span className="text-xs font-bold text-gray-400">#{rank}</span>
         )}
       </div>
 
       {/* Avatar + Username */}
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-sm shrink-0">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm shrink-0">
           {initial}
         </div>
-        <span className="text-sm font-semibold text-gray-800 truncate">
-          {displayName}
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-gray-900 truncate">
+            {displayName}
+          </p>
+          <div className="flex lg:hidden items-center gap-2 mt-0.5 text-xs text-gray-500">
+             <span>🗑️ {player.totalTrashSegregated ?? 0}</span>
+             <span>🪙 {player.envirocoins ?? 0}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bin Breakdown (Desktop Only) */}
+      <div className="hidden xl:flex items-center gap-1.5 text-[11px] font-medium shrink-0">
+        <span className="px-2 py-1 bg-amber-50 rounded-md border border-amber-100 text-amber-700">
+          🟤 {player.biodegradable?.percentage ?? 0}%
         </span>
-      </div>
-
-      {/* Accuracy */}
-      <div className="text-right shrink-0 w-16">
-        <p
-          className={`text-sm font-bold ${
-            player.accuracyPercentage >= 75
-              ? "text-emerald-600"
-              : player.accuracyPercentage >= 50
-                ? "text-yellow-600"
-                : "text-red-400"
-          }`}
-        >
-          {(player.accuracyPercentage ?? 0).toFixed(2)}%
-        </p>
-        <p className="text-[10px] text-gray-400">accuracy</p>
-      </div>
-
-      {/* Trash Segregated */}
-      <div className="text-right shrink-0 w-16 hidden sm:block">
-        <p className="text-sm font-semibold text-gray-600">
-          {player.totalTrashSegregated ?? 0}
-        </p>
-        <p className="text-[10px] text-gray-400">🗑️ trash</p>
-      </div>
-
-      {/* Envirocoins */}
-      <div className="text-right shrink-0 w-16 hidden sm:block">
-        <p className="text-sm font-semibold text-yellow-500">
-          {player.envirocoins ?? 0}
-        </p>
-        <p className="text-[10px] text-gray-400">🪙 coins</p>
-      </div>
-
-      {/* Bin Breakdown */}
-      <div className="hidden lg:flex items-center gap-1 text-[10px]">
-        <span className="px-1.5 py-0.5 bg-amber-50 rounded text-amber-700">
-          🟤{player.biodegradable?.percentage ?? 0}%
+        <span className="px-2 py-1 bg-blue-50 rounded-md border border-blue-100 text-blue-700">
+          🔵 {player.recyclable?.percentage ?? 0}%
         </span>
-        <span className="px-1.5 py-0.5 bg-blue-50 rounded text-blue-700">
-          🔵{player.recyclable?.percentage ?? 0}%
-        </span>
-        <span className="px-1.5 py-0.5 bg-gray-50 rounded text-gray-600">
-          ⚫{player.residual?.percentage ?? 0}%
+        <span className="px-2 py-1 bg-gray-100 rounded-md border border-gray-200 text-gray-600">
+          ⚫ {player.residual?.percentage ?? 0}%
         </span>
         {player.specialWaste && (
-          <span className="px-1.5 py-0.5 bg-purple-50 rounded text-purple-700">
-            🟣{specialWastePercentage}%
+          <span className="px-2 py-1 bg-purple-50 rounded-md border border-purple-100 text-purple-700">
+            🟣 {specialWastePercentage}%
           </span>
         )}
+      </div>
+
+      {/* Stats right side */}
+      <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+        <div className="text-right hidden lg:block w-16">
+          <p className="text-sm font-bold text-gray-700">
+            {player.totalTrashSegregated ?? 0}
+          </p>
+          <p className="text-[10px] uppercase font-semibold text-gray-400">Items</p>
+        </div>
+
+        <div className="text-right hidden lg:block w-16">
+          <p className="text-sm font-bold text-yellow-600 flex items-center justify-end gap-1">
+            <span>🪙</span> {player.envirocoins ?? 0}
+          </p>
+          <p className="text-[10px] uppercase font-semibold text-gray-400">Coins</p>
+        </div>
+
+        <div className="text-right w-16 sm:w-20 bg-white px-2 py-1.5 rounded-lg border border-gray-100 shadow-sm">
+          <p
+            className={`text-sm sm:text-base font-bold ${
+              player.accuracyPercentage >= 75
+                ? "text-emerald-600"
+                : player.accuracyPercentage >= 50
+                  ? "text-yellow-600"
+                  : "text-red-500"
+            }`}
+          >
+            {(player.accuracyPercentage ?? 0).toFixed(1)}%
+          </p>
+          <p className="text-[9px] uppercase font-semibold text-gray-400 tracking-wider">Accuracy</p>
+        </div>
       </div>
     </div>
   );
@@ -269,10 +270,10 @@ function PlayerRow({ player, rank }: { player: PlayerRowData; rank: number }) {
 
 function EmptyRankings() {
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-gray-300 gap-2">
-      <span className="text-4xl">📚</span>
-      <p className="text-sm font-medium text-gray-400">No players found</p>
-      <p className="text-xs text-gray-300">
+    <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-3">
+      <span className="text-5xl">📚</span>
+      <p className="text-sm font-bold text-gray-500">No players found</p>
+      <p className="text-xs text-gray-400">
         This classroom has no active players yet
       </p>
     </div>
@@ -286,28 +287,28 @@ function LoadingState() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="p-4">
-            <div className="animate-pulse flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-200 rounded-xl"></div>
+          <Card key={i} className="p-5 h-24">
+            <div className="animate-pulse flex items-center gap-4 h-full">
+              <div className="w-12 h-12 bg-gray-200 rounded-xl shrink-0"></div>
               <div className="flex-1">
                 <div className="h-3 bg-gray-200 rounded w-20 mb-2"></div>
-                <div className="h-5 bg-gray-200 rounded w-12"></div>
+                <div className="h-6 bg-gray-200 rounded w-12"></div>
               </div>
             </div>
           </Card>
         ))}
       </div>
       <Card className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 rounded w-32"></div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="animate-pulse space-y-6">
+          <div className="h-5 bg-gray-200 rounded w-40"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-20 bg-gray-100 rounded-xl"></div>
+              <div key={i} className="h-28 bg-gray-100 rounded-xl"></div>
             ))}
           </div>
-          <div className="space-y-3">
+          <div className="space-y-3 pt-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-14 bg-gray-100 rounded-xl"></div>
+              <div key={i} className="h-16 bg-gray-100 rounded-xl"></div>
             ))}
           </div>
         </div>
@@ -357,17 +358,17 @@ export default function ClassroomSection() {
   if (error) {
     return (
       <DefaultLayout>
-        <Card className="p-8">
-          <div className="flex flex-col items-center justify-center text-center gap-3">
-            <span className="text-4xl">⚠️</span>
-            <p className="text-sm font-medium text-red-500">{error}</p>
+        <Card className="p-10">
+          <div className="flex flex-col items-center justify-center text-center gap-4">
+            <span className="text-5xl">⚠️</span>
+            <p className="text-base font-medium text-red-500">{error}</p>
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               onClick={() => window.location.reload()}
             >
-              <ArrowPathIcon className="w-4 h-4 mr-1" />
-              Retry
+              <ArrowPathIcon className="w-4 h-4 mr-2" />
+              Retry Connection
             </Button>
           </div>
         </Card>
@@ -385,91 +386,91 @@ export default function ClassroomSection() {
   return (
     <DefaultLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="space-y-3">
-          <div className="-ml-4 sm:-ml-4">
-            <Button
-              variant="primary"
-              size="md"
-              leftIcon={<ArrowLeftIcon className="h-5 w-5" />}
-              onClick={() => navigate(-1)}
-            >
-              Return
-            </Button>
-          </div>
+        
+        {/* Navigation Return */}
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
+            onClick={() => navigate(-1)}
+            className="text-gray-500 hover:text-gray-900 -ml-2"
+          >
+            Return
+          </Button>
+        </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-2">
-                <span>🏫</span>
-                {analytics?.classroomName}
-              </h1>
-              <p className="text-sm text-[#64748B] mt-1">
-                Classroom analytics and student performance
-              </p>
-            </div>
-            <Button
-              onClick={() => navigate(`/classrooms/${classroomId}/mystudents`)}
-            >
-              See All My Students
-            </Button>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <span>🏫</span>
+              {analytics?.classroomName || "Classroom Analytics"}
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Classroom analytics and overall student performance
+            </p>
           </div>
+          <Button
+            variant="primary"
+            onClick={() => navigate(`/classrooms/${classroomId}/mystudents`)}
+            className="w-full sm:w-auto"
+          >
+            See All My Students
+          </Button>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            icon={<UsersIcon className="w-5 h-5" />}
+            icon={<UsersIcon className="w-6 h-6" />}
             label="Total Players"
             value={analytics?.totalPlayers ?? 0}
             subtext="Enrolled students"
             color="emerald"
           />
           <StatCard
-            icon={<ChartBarIcon className="w-5 h-5" />}
+            icon={<ChartBarIcon className="w-6 h-6" />}
             label="Total Attempts"
             value={analytics?.totalAttempts ?? 0}
-            subtext={`${analytics?.totalCorrect ?? 0} correct, ${
-              analytics?.totalWrong ?? 0
-            } wrong`}
+            subtext={`${analytics?.totalCorrect ?? 0} right, ${analytics?.totalWrong ?? 0} wrong`}
             color="blue"
           />
           <StatCard
-            icon={<TrophyIcon className="w-5 h-5" />}
+            icon={<TrophyIcon className="w-6 h-6" />}
             label="Overall Accuracy"
             value={`${analytics?.overallAccuracy ?? 0}%`}
             subtext={`${analytics?.totalCorrectnessPercentage ?? 0}% correctness`}
             color="purple"
           />
           <StatCard
-            icon={<UserGroupIcon className="w-5 h-5" />}
-            label="Trash Segregated"
+            icon={<UserGroupIcon className="w-6 h-6" />}
+            label="Items Sorted"
             value={analytics?.totalTrashSegregated ?? 0}
-            subtext="Total items sorted"
+            subtext="Total trash segregated"
             color="yellow"
           />
         </div>
 
         {/* Bin Breakdown */}
         <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-base font-bold text-[#0F172A]">
-                🗑️ Bin Performance
-              </h2>
-              <p className="text-xs text-[#64748B]">
-                Accuracy breakdown by waste type
-              </p>
-            </div>
+          <div className="mb-5">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <span>🗑️</span> Bin Performance
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Overall classroom accuracy breakdown by specific waste type
+            </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <BinStatsCard
               icon="🟤"
               label="Biodegradable"
               correct={analytics?.biodegradableCorrect ?? 0}
               wrong={analytics?.biodegradableWrong ?? 0}
               percentage={analytics?.biodegradableCorrectnessPercentage ?? 0}
-              color="border-amber-200 bg-amber-50/30"
+              color="border-amber-200 bg-amber-50/40"
             />
             <BinStatsCard
               icon="🔵"
@@ -477,7 +478,7 @@ export default function ClassroomSection() {
               correct={analytics?.recyclableCorrect ?? 0}
               wrong={analytics?.recyclableWrong ?? 0}
               percentage={analytics?.recyclableCorrectnessPercentage ?? 0}
-              color="border-blue-200 bg-blue-50/30"
+              color="border-blue-200 bg-blue-50/40"
             />
             <BinStatsCard
               icon="⚫"
@@ -485,7 +486,7 @@ export default function ClassroomSection() {
               correct={analytics?.residualCorrect ?? 0}
               wrong={analytics?.residualWrong ?? 0}
               percentage={analytics?.residualCorrectnessPercentage ?? 0}
-              color="border-gray-200 bg-gray-50/30"
+              color="border-gray-200 bg-gray-50/50"
             />
             <BinStatsCard
               icon="🟣"
@@ -493,27 +494,26 @@ export default function ClassroomSection() {
               correct={analytics?.specialWasteCorrect ?? 0}
               wrong={analytics?.specialWasteWrong ?? 0}
               percentage={analytics?.specialWasteCorrectnessPercentage ?? 0}
-              color="border-purple-200 bg-purple-50/30"
+              color="border-purple-200 bg-purple-50/40"
             />
           </div>
         </Card>
 
         {/* Player Leaderboard */}
-        <Card className="p-6 mx-10">
-          <div className="flex items-center justify-between mb-4">
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-base font-bold text-[#0F172A]">
-                👥 Player Rankings
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <span>👥</span> Player Rankings
               </h2>
-              <p className="text-xs text-[#64748B]">
-                {sortedPlayers.length} active player
-                {sortedPlayers.length !== 1 ? "s" : ""}
+              <p className="text-sm text-gray-500 mt-1">
+                {sortedPlayers.length} active player{sortedPlayers.length !== 1 ? "s" : ""}
               </p>
             </div>
           </div>
 
           {hasPlayers ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {sortedPlayers.map((player, index) => (
                 <PlayerRow
                   key={player.studentId ?? player.username ?? index}
