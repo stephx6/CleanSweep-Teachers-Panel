@@ -12,13 +12,102 @@ import {
 } from "firebase/firestore";
 import { db } from "../FirebaseConfig";
 import { getAuth } from "firebase/auth";
-import {} from "firebase/firestore";
-import type { ClassroomCode } from "../types/dashboardTypes";
+import type { ClassroomCode, PlayerAnalytics } from "../types/dashboardTypes";
 
 // Collections
 
 const playerCollectionName = "PlayerData";
 const classRoomCollectionName = "ClassroomCodes";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const num = (v: unknown) => (typeof v === "number" && !isNaN(v) ? v : 0);
+
+const calcPercentage = (correct: number, total: number) =>
+  total > 0 ? parseFloat(((correct / total) * 100).toFixed(2)) : 0;
+
+/** Builds one bin's correct/wrong/percentage block from raw player fields. */
+const binStat = (correct: unknown, wrong: unknown) => {
+  const c = num(correct);
+  const w = num(wrong);
+  return { correct: c, wrong: w, percentage: calcPercentage(c, c + w) };
+};
+
+const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+};
+
+/**
+ * Fetches player docs.
+ *
+ * The `role == "player"` query is exact and case-sensitive, so a doc saved as
+ * "Player" — or with no role at all — is silently skipped and the report comes
+ * out empty. If the strict query returns nothing, this falls back to reading
+ * the collection and filtering in memory.
+ */
+const fetchPlayerDocs = async () => {
+  const strict = await getDocs(
+    query(collection(db, playerCollectionName), where("role", "==", "player")),
+  );
+
+  if (!strict.empty) {
+    return strict.docs.map((d) => ({ id: d.id, ...d.data() })) as any[];
+  }
+
+  const all = await getDocs(collection(db, playerCollectionName));
+  const players = all.docs
+    .map((d) => ({ id: d.id, ...d.data() }) as any)
+    .filter((p) => String(p.role ?? "").toLowerCase() !== "admin")
+    .filter((p) => String(p.role ?? "").toLowerCase() !== "teacher");
+
+  console.warn(
+    `[adminApi] No docs matched role == "player". Falling back to a full read of ${playerCollectionName}: ${all.size} docs, ${players.length} kept. Check how "role" is spelled in Firestore.`,
+  );
+
+  return players;
+};
+
+/**
+ * Looks up classroom docs for a list of player classroom codes.
+ * Dedupes, skips the query when there are no codes, and chunks by 30 because
+ * Firestore caps `in` queries at 30 values.
+ */
+const fetchClassroomMap = async (rawCodes: (string | undefined)[]) => {
+  const map = new Map<
+    string,
+    { classroomName: string | null; createdBy: string | null }
+  >();
+
+  const codes = [...new Set(rawCodes.filter(Boolean))] as string[];
+  if (codes.length === 0) return map;
+
+  const snapshots = await Promise.all(
+    chunkArray(codes, 30).map((chunk) =>
+      getDocs(
+        query(
+          collection(db, classRoomCollectionName),
+          where("code", "in", chunk),
+        ),
+      ),
+    ),
+  );
+
+  snapshots.forEach((snap) =>
+    snap.docs.forEach((d) => {
+      const data = d.data();
+      map.set(data.code, {
+        classroomName: data.classroomName ?? null,
+        createdBy: data.createdBy ?? null,
+      });
+    }),
+  );
+
+  return map;
+};
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
 
 export const getCurrentAdmin = async () => {
   const auth = getAuth();
@@ -42,132 +131,51 @@ export const getAdminName = async (uid: string) => {
   };
 };
 
+// ─── Players ──────────────────────────────────────────────────────────────────
+
 export const getAllPlayers = async () => {
-  const playersSnapshot = await getDocs(
-    query(collection(db, playerCollectionName), where("role", "==", "player")),
+  const players = await fetchPlayerDocs();
+  const classroomMap = await fetchClassroomMap(
+    players.map((p) => p.classroomCode),
   );
 
-  const players = playersSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
-
-  // Get unique classroom codes actually in use (field is "classroomCode" on player docs)
-  const codes = [
-    ...new Set(players.map((p: any) => p.classroomCode).filter(Boolean)),
-  ];
-
-  if (codes.length === 0) return players;
-
-  // Firestore 'in' queries support max 30 values per query
-  const chunks = [];
-  for (let i = 0; i < codes.length; i += 30) {
-    chunks.push(codes.slice(i, i + 30));
-  }
-
-  const classroomSnapshots = await Promise.all(
-    chunks.map((chunk) =>
-      getDocs(
-        query(
-          collection(db, classRoomCollectionName),
-          where("code", "in", chunk), 
-        ),
-      ),
-    ),
-  );
-
-  const classroomMap = new Map();
-  classroomSnapshots.forEach((snap) =>
-    snap.docs.forEach((doc) => {
-      const data = doc.data();
-      classroomMap.set(data.code, data.classroomName); // <-- key by "code"
-    }),
-  );
-
-  return players.map((p: any) => ({
+  return players.map((p) => ({
     ...p,
-    classroomName: classroomMap.get(p.classroomCode) ?? null, // lookup still by player's classroomCode value
+    classroomName: classroomMap.get(p.classroomCode)?.classroomName ?? null,
   }));
 };
 
-export const getPlayerAnalytics = async () => {
-  const q = query(
-    collection(db, playerCollectionName),
-    where("role", "==", "player"),
+export const getPlayerAnalytics = async (): Promise<PlayerAnalytics> => {
+  const players = await fetchPlayerDocs();
+  const classroomMap = await fetchClassroomMap(
+    players.map((p) => p.classroomCode),
   );
 
-  const querySnapshot = await getDocs(q);
-  const players = querySnapshot.docs.map((doc) => doc.data());
+  console.log("[adminApi] players loaded for analytics:", players.length);
 
-  const playerClassroom = players.filter((p) => p.classroomCode !== undefined);
+  const sum = (key: string) => players.reduce((s, p) => s + num(p[key]), 0);
 
-  const q2 = query(
-    collection(db, "ClassroomCodes"),
-    where(
-      "code",
-      "in",
-      playerClassroom.map((e) => e.classroomCode),
-    ),
-  );
-  const querySnapshot2 = await getDocs(q2);
-  const createdBy = querySnapshot2.docs.map((doc) => doc.data());
+  const totalAttempts = sum("totalAttempts");
+  const totalCorrect = sum("totalCorrect");
+  const totalWrong = sum("totalWrong");
 
-  const classroomMap = new Map(createdBy.map((c) => [c.code, c.createdBy]));
-
-  // Pre-compute shared totals
-  const totalAttempts = players.reduce(
-    (sum, p) => sum + (p.totalAttempts ?? 0),
-    0,
-  );
-  const totalCorrect = players.reduce(
-    (sum, p) => sum + (p.totalCorrect ?? 0),
-    0,
-  );
-  const totalWrong = players.reduce((sum, p) => sum + (p.totalWrong ?? 0), 0);
-
-  const biodegradableCorrect = players.reduce(
-    (sum, p) => sum + (p.biodegradableCorrect ?? 0),
-    0,
-  );
-  const biodegradableWrong = players.reduce(
-    (sum, p) => sum + (p.biodegradableWrong ?? 0),
-    0,
-  );
+  const biodegradableCorrect = sum("biodegradableCorrect");
+  const biodegradableWrong = sum("biodegradableWrong");
   const biodegradableTotal = biodegradableCorrect + biodegradableWrong;
 
-  const recyclableCorrect = players.reduce(
-    (sum, p) => sum + (p.recyclableCorrect ?? 0),
-    0,
-  );
-  const recyclableWrong = players.reduce(
-    (sum, p) => sum + (p.recyclableWrong ?? 0),
-    0,
-  );
+  const recyclableCorrect = sum("recyclableCorrect");
+  const recyclableWrong = sum("recyclableWrong");
   const recyclableTotal = recyclableCorrect + recyclableWrong;
 
-  const residualCorrect = players.reduce(
-    (sum, p) => sum + (p.residualCorrect ?? 0),
-    0,
-  );
-  const residualWrong = players.reduce(
-    (sum, p) => sum + (p.residualWrong ?? 0),
-    0,
-  );
+  const residualCorrect = sum("residualCorrect");
+  const residualWrong = sum("residualWrong");
   const residualTotal = residualCorrect + residualWrong;
-  const specialWasteCorrect = players.reduce(
-    (sum, p) => sum + (p.specialWasteCorrect ?? 0),
-    0,
-  );
-  const specialWasteWrong = players.reduce(
-    (sum, p) => sum + (p.specialWasteWrong ?? 0),
-    0,
-  );
+
+  const specialWasteCorrect = sum("specialWasteCorrect");
+  const specialWasteWrong = sum("specialWasteWrong");
   const specialWasteTotal = specialWasteCorrect + specialWasteWrong;
 
-  const calcPercentage = (correct: number, total: number) =>
-    total > 0 ? parseFloat(((correct / total) * 100).toFixed(2)) : 0;
-
-  const analytics = {
+  return {
     totalPlayers: players.length,
 
     // Overall totals
@@ -176,10 +184,8 @@ export const getPlayerAnalytics = async () => {
     totalWrong,
     overallAccuracy: Math.round(calcPercentage(totalCorrect, totalAttempts)),
     totalCorrectnessPercentage: calcPercentage(totalCorrect, totalAttempts),
-    totalTrashSegregated: players.reduce(
-      (sum, p) => sum + (p.totalTrashSegregated ?? 0),
-      0,
-    ),
+    totalTrashSegregated: sum("totalTrashSegregated"),
+
     // Biodegradable bin
     biodegradableCorrect,
     biodegradableWrong,
@@ -216,48 +222,45 @@ export const getPlayerAnalytics = async () => {
       specialWasteTotal,
     ),
 
-    // Per-player breakdown
-    perPlayer: players.map((p) => ({
-      studentId: p.studentId,
-      studentName: p.studentName,
-      username: p.username,
-      totalAttempts: p.totalAttempts ?? 0,
-      totalCorrect: p.totalCorrect ?? 0,
-      totalWrong: p.totalWrong ?? 0,
-      accuracyPercentage: p.accuracyPercentage ?? 0,
-      totalTrashSegregated: p.totalTrashSegregated ?? 0,
-      envirocoins: p.envirocoins ?? 0,
-      biodegradable: {
-        correct: p.biodegradableCorrect ?? 0,
-        wrong: p.biodegradableWrong ?? 0,
-        percentage: calcPercentage(
-          p.biodegradableCorrect ?? 0,
-          (p.biodegradableCorrect ?? 0) + (p.biodegradableWrong ?? 0),
-        ),
-      },
-      recyclable: {
-        correct: p.recyclableCorrect ?? 0,
-        wrong: p.recyclableWrong ?? 0,
-        percentage: calcPercentage(
-          p.recyclableCorrect ?? 0,
-          (p.recyclableCorrect ?? 0) + (p.recyclableWrong ?? 0),
-        ),
-      },
-      residual: {
-        correct: p.residualCorrect ?? 0,
-        wrong: p.residualWrong ?? 0,
-        percentage: calcPercentage(
-          p.residualCorrect ?? 0,
-          (p.residualCorrect ?? 0) + (p.residualWrong ?? 0),
-        ),
-      },
-      classroomcode: p.classroomCode,
-      createdBy: classroomMap.get(p.classroomCode) ?? null,
-    })),
-  };
+    // Per-student breakdown
+    perPlayer: players.map((p) => {
+      const classroom = classroomMap.get(p.classroomCode);
 
-  return analytics;
+      return {
+        id: p.id,
+        studentId: p.studentId ?? "",
+        studentName: p.studentName ?? p.name ?? "",
+        username: p.username ?? p.name ?? p.studentName ?? p.id ?? "",
+
+        totalAttempts: num(p.totalAttempts),
+        totalCorrect: num(p.totalCorrect),
+        totalWrong: num(p.totalWrong),
+        accuracyPercentage:
+          typeof p.accuracyPercentage === "number"
+            ? p.accuracyPercentage
+            : calcPercentage(num(p.totalCorrect), num(p.totalAttempts)),
+        totalTrashSegregated: num(p.totalTrashSegregated),
+        envirocoins: num(p.envirocoins),
+
+        pretestAccuracy: num(p.pretestAccuracy),
+        posttestAccuracy: num(p.posttestAccuracy),
+
+        biodegradable: binStat(p.biodegradableCorrect, p.biodegradableWrong),
+        recyclable: binStat(p.recyclableCorrect, p.recyclableWrong),
+        residual: binStat(p.residualCorrect, p.residualWrong),
+        specialWaste: binStat(p.specialWasteCorrect, p.specialWasteWrong),
+
+        classroomCode: p.classroomCode ?? null,
+        // kept for older components that read the all-lowercase key
+        classroomcode: p.classroomCode ?? null,
+        classroomName: classroom?.classroomName ?? null,
+        createdBy: classroom?.createdBy ?? null,
+      };
+    }),
+  };
 };
+
+// ─── Classroom codes ──────────────────────────────────────────────────────────
 
 // Generate a random classroom code
 const generateRandomCode = (): string => {
@@ -286,7 +289,7 @@ export const createClassroomCode = async (
     createdAt: new Date().toISOString(),
   };
 
-  await addDoc(collection(db, "ClassroomCodes"), codeData);
+  await addDoc(collection(db, classRoomCollectionName), codeData);
 
   return newCode;
 };
@@ -294,13 +297,13 @@ export const createClassroomCode = async (
 // Get all classroom codes
 export const getClassroomCodes = async (): Promise<ClassroomCode[]> => {
   try {
-    const codesRef = collection(db, "ClassroomCodes");
+    const codesRef = collection(db, classRoomCollectionName);
     const q = query(codesRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
+    return querySnapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
     })) as ClassroomCode[];
   } catch (error) {
     console.error("Error fetching classroom codes:", error);
@@ -314,7 +317,7 @@ export const updateCodeStatus = async (
   isActive: boolean,
 ): Promise<void> => {
   try {
-    const codeRef = doc(db, "ClassroomCodes", codeId);
+    const codeRef = doc(db, classRoomCollectionName, codeId);
     await updateDoc(codeRef, { isActive });
   } catch (error) {
     console.error("Error updating code status:", error);
@@ -325,7 +328,7 @@ export const updateCodeStatus = async (
 // Delete a classroom code
 export const deleteCode = async (codeId: string): Promise<void> => {
   try {
-    const codeRef = doc(db, "ClassroomCodes", codeId);
+    const codeRef = doc(db, classRoomCollectionName, codeId);
     await deleteDoc(codeRef);
   } catch (error) {
     console.error("Error deleting code:", error);
