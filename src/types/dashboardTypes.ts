@@ -132,3 +132,26 @@ export interface ReportGeneratorProps {
   analytics: PlayerAnalytics | null;
   isLoading?: boolean;
 }
+
+export type ReportPlayerRow = {
+  id?: string;
+  studentId: string;
+  studentName: string;
+  username: string;
+  totalAttempts: number;
+  totalCorrect: number;
+  totalWrong: number;
+  accuracyPercentage: number;
+  totalTrashSegregated: number;
+  envirocoins: number;
+  pretestAccuracy: number;
+  posttestAccuracy: number;
+  biodegradable: BinStat;
+  recyclable: BinStat;
+  residual: BinStat;
+  specialWaste: BinStat;
+  classroomCode: string | null;
+  classroomcode?: string | null;
+  classroomName: string | null;
+  createdBy: string | null;
+};
