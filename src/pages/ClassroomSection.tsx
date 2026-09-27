@@ -380,7 +380,7 @@ export default function ClassroomSection() {
   const sortedPlayers = analytics
     ? [...analytics.perPlayer].sort(
         (a, b) => (b.accuracyPercentage ?? 0) - (a.accuracyPercentage ?? 0),
-      )
+      ).slice(0, 10)
     : [];
     
   return (
@@ -507,7 +507,7 @@ export default function ClassroomSection() {
                 <span>👥</span> Player Rankings
               </h2>
               <p className="text-sm text-gray-500 mt-1">
-                {sortedPlayers.length} active player{sortedPlayers.length !== 1 ? "s" : ""}
+                Top 10 Players
               </p>
             </div>
           </div>
