@@ -116,6 +116,7 @@ function PlayerRow({
   );
 }
 
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Leaderboard({
@@ -126,7 +127,8 @@ export default function Leaderboard({
 
   const sorted = [...players]
     .filter((p) => (p.totalAttempts ?? 0) > 0) // exclude players who haven't played
-    .sort((a, b) => (b[sortKey] ?? 0) - (a[sortKey] ?? 0));
+    .sort((a, b) => (b[sortKey] ?? 0) - (a[sortKey] ?? 0))
+    .slice(0,10);
 
   return (
     <Card isLoading={isLoading} skeletonHeight="h-96" fullWidth>

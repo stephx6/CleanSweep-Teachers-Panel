@@ -1,3 +1,4 @@
+
 import { usePlayerTotalLength } from "../../hooks/usePlayer";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
@@ -8,7 +9,11 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import PopUpModal from "../ui/PopUpModal";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 10;
 
 // ─── Bin Pill ─────────────────────────────────────────────────────────────────
 
@@ -27,6 +32,7 @@ function BinPill({
 }) {
   const total = correct + wrong;
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
   return (
     <div
       className={`flex flex-col items-center px-2 py-1 rounded-lg border ${color} min-w-[64px]`}
@@ -113,18 +119,29 @@ type SortMode = "default" | "accuracy_desc" | "accuracy_asc";
 
 export default function StudentsTable() {
   const { totalPlayers, loading } = usePlayerTotalLength();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [selectedClassroom, setSelectedClassroom] = useState<string>("all");
   const [sortMode, setSortMode] = useState<SortMode>("default");
   const [showFilters, setShowFilters] = useState(false);
 
+  // ── Pagination State ──
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // ── Reset page when search, filter, or sort changes ──
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedClassroom, sortMode]);
+
   // ── Unique classroom names from data ──
   const classroomNames = useMemo(() => {
     if (!totalPlayers) return [];
+
     const names = totalPlayers
       .map((p: any) => p.classroomName)
       .filter(Boolean) as string[];
+
     return ["all", ...Array.from(new Set(names))];
   }, [totalPlayers]);
 
@@ -136,30 +153,60 @@ export default function StudentsTable() {
       const matchesName = player.username
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase());
+
       const matchesClassroom =
         selectedClassroom === "all" ||
         player.classroomName === selectedClassroom;
+
       return matchesName && matchesClassroom;
     });
 
     if (sortMode === "accuracy_desc") {
       result = [...result].sort(
-        (a, b) => (b.accuracyPercentage ?? 0) - (a.accuracyPercentage ?? 0),
+        (a, b) =>
+          (b.accuracyPercentage ?? 0) -
+          (a.accuracyPercentage ?? 0),
       );
     } else if (sortMode === "accuracy_asc") {
       result = [...result].sort(
-        (a, b) => (a.accuracyPercentage ?? 0) - (b.accuracyPercentage ?? 0),
+        (a, b) =>
+          (a.accuracyPercentage ?? 0) -
+          (b.accuracyPercentage ?? 0),
       );
     } else {
       result = [...result].sort((a, b) => {
         const nameA = a.classroomName ?? "";
         const nameB = b.classroomName ?? "";
+
         return nameA.localeCompare(nameB);
       });
     }
 
     return result;
   }, [totalPlayers, searchTerm, selectedClassroom, sortMode]);
+
+  // ── Pagination Calculations ──
+  const totalPages = Math.ceil(
+    filteredPlayers.length / PAGE_SIZE,
+  );
+
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+
+  const paginatedPlayers = filteredPlayers.slice(
+    startIndex,
+    startIndex + PAGE_SIZE,
+  );
+
+  // ── Pagination Handlers ──
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) =>
+      Math.min(totalPages, prev + 1),
+    );
+  };
 
   // ── Active filter count (for badge) ──
   const activeFilters = [
@@ -177,7 +224,9 @@ export default function StudentsTable() {
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div>
-          <h2 className="text-xl font-bold text-[#0F172A]">Students List</h2>
+          <h2 className="text-xl font-bold text-[#0F172A]">
+            Students List
+          </h2>
           <p className="text-sm text-[#64748B] mt-1">
             Manage enrolled students
           </p>
@@ -191,7 +240,9 @@ export default function StudentsTable() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               size="md"
-              leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
+              leftIcon={
+                <MagnifyingGlassIcon className="w-4 h-4" />
+              }
               fullWidth
             />
           </div>
@@ -208,6 +259,7 @@ export default function StudentsTable() {
           >
             <FunnelIcon className="w-4 h-4" />
             Filters
+
             {activeFilters > 0 && (
               <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-emerald-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                 {activeFilters}
@@ -225,6 +277,7 @@ export default function StudentsTable() {
             <p className="text-xs font-semibold text-gray-500 mb-2">
               🏫 Classroom
             </p>
+
             <div className="flex flex-wrap gap-2">
               {classroomNames.map((name) => (
                 <button
@@ -248,6 +301,7 @@ export default function StudentsTable() {
             <p className="text-xs font-semibold text-gray-500 mb-2">
               🎯 Sort by Accuracy
             </p>
+
             <div className="flex gap-2">
               {[
                 { value: "default", label: "Default" },
@@ -256,7 +310,9 @@ export default function StudentsTable() {
               ].map((opt) => (
                 <button
                   key={opt.value}
-                  onClick={() => setSortMode(opt.value as SortMode)}
+                  onClick={() =>
+                    setSortMode(opt.value as SortMode)
+                  }
                   className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all duration-150
                     ${
                       sortMode === opt.value
@@ -286,12 +342,12 @@ export default function StudentsTable() {
       )}
 
       {/* ── Stats Badge ── */}
-      {!loading && filteredPlayers && filteredPlayers.length > 0 && (
+      {!loading && filteredPlayers.length > 0 && (
         <div className="mb-4 flex justify-end">
           <div className="bg-[#F0FDF4] px-3 py-1 rounded-lg border border-[#BBF7D0]">
             <span className="text-sm font-medium text-[#16A34A]">
-              Showing: {filteredPlayers.length} / {totalPlayers?.length || 0}{" "}
-              students
+              Showing: {filteredPlayers.length} /{" "}
+              {totalPlayers?.length || 0} students
             </span>
           </div>
         </div>
@@ -300,7 +356,7 @@ export default function StudentsTable() {
       {/* ── Content ── */}
       {loading ? (
         <LoadingSkeleton />
-      ) : !filteredPlayers || filteredPlayers.length === 0 ? (
+      ) : filteredPlayers.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="w-full">
@@ -332,10 +388,11 @@ export default function StudentsTable() {
                   </th>
                 </tr>
               </thead>
+
               <tbody>
-                {filteredPlayers.map((player: any, key: number) => (
+                {paginatedPlayers.map((player: any, index: number) => (
                   <tr
-                    key={key}
+                    key={player.id ?? player.studentId ?? `${player.username}-${index}`}
                     className="border-b border-[#F0FDF4] hover:bg-[#F0FDF4] transition-colors"
                   >
                     <td className="py-3 px-4 font-medium text-[#0F172A]">
@@ -348,7 +405,9 @@ export default function StudentsTable() {
                     </td>
 
                     <td className="py-3 px-4">
-                      <AccuracyBadge value={player.accuracyPercentage ?? 0} />
+                      <AccuracyBadge
+                        value={player.accuracyPercentage ?? 0}
+                      />
                     </td>
 
                     <td className="py-3 px-4">
@@ -360,6 +419,7 @@ export default function StudentsTable() {
                           wrong={player.biodegradableWrong ?? 0}
                           color="bg-amber-50 border-amber-200 text-amber-700"
                         />
+
                         <BinPill
                           icon="🔵"
                           label="Recycle"
@@ -367,6 +427,7 @@ export default function StudentsTable() {
                           wrong={player.recyclableWrong ?? 0}
                           color="bg-blue-50 border-blue-200 text-blue-700"
                         />
+
                         <BinPill
                           icon="⚫"
                           label="Residual"
@@ -374,6 +435,7 @@ export default function StudentsTable() {
                           wrong={player.residualWrong ?? 0}
                           color="bg-gray-50 border-gray-200 text-gray-600"
                         />
+
                         <BinPill
                           icon="🟣"
                           label="Special"
@@ -420,9 +482,9 @@ export default function StudentsTable() {
 
           {/* Mobile View */}
           <div className="md:hidden space-y-3">
-            {filteredPlayers.map((player: any, key: number) => (
+            {paginatedPlayers.map((player: any, index: number) => (
               <div
-                key={key}
+                key={player.id ?? player.studentId ?? `${player.username}-${index}`}
                 className="bg-[#F8FAFC] rounded-xl p-4 hover:bg-[#F0FDF4] transition-colors"
               >
                 <div className="flex justify-between items-start mb-3">
@@ -430,15 +492,18 @@ export default function StudentsTable() {
                     <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-sm">
                       {player.username?.charAt(0).toUpperCase() ?? "?"}
                     </div>
+
                     <div>
                       <p className="font-semibold text-[#0F172A]">
                         {player.username || "Unknown"}
                       </p>
+
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-yellow-500 text-xs">🪙</span>
                         <span className="text-xs text-[#64748B]">
                           {player.envirocoins || 0} coins
                         </span>
+
                         {player.classroomName && (
                           <span className="font-mono text-[10px] bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded text-gray-500">
                             {player.classroomName}
@@ -447,6 +512,7 @@ export default function StudentsTable() {
                       </div>
                     </div>
                   </div>
+
                   <Button
                     variant="ghost"
                     size="sm"
@@ -457,7 +523,10 @@ export default function StudentsTable() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  <AccuracyBadge value={player.accuracyPercentage ?? 0} />
+                  <AccuracyBadge
+                    value={player.accuracyPercentage ?? 0}
+                  />
+
                   <BinPill
                     icon="🟤"
                     label="Bio"
@@ -465,6 +534,7 @@ export default function StudentsTable() {
                     wrong={player.biodegradableWrong ?? 0}
                     color="bg-amber-50 border-amber-200 text-amber-700"
                   />
+
                   <BinPill
                     icon="🔵"
                     label="Recycle"
@@ -472,6 +542,7 @@ export default function StudentsTable() {
                     wrong={player.recyclableWrong ?? 0}
                     color="bg-blue-50 border-blue-200 text-blue-700"
                   />
+
                   <BinPill
                     icon="⚫"
                     label="Residual"
@@ -479,6 +550,7 @@ export default function StudentsTable() {
                     wrong={player.residualWrong ?? 0}
                     color="bg-gray-50 border-gray-200 text-gray-600"
                   />
+
                   <BinPill
                     icon="🟣"
                     label="Special"
@@ -489,6 +561,40 @@ export default function StudentsTable() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* ── Pagination Controls ── */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-5 pt-4 border-t border-[#BBF7D0]">
+            <p className="text-xs text-[#64748B]">
+              Showing {startIndex + 1}-
+              {Math.min(
+                startIndex + PAGE_SIZE,
+                filteredPlayers.length,
+              )}{" "}
+              of {filteredPlayers.length} students
+            </p>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+                className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+
+              <span className="text-sm font-semibold text-[#14532D] whitespace-nowrap">
+                Page {currentPage} of {totalPages}
+              </span>
+
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage >= totalPages}
+                className="px-3 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -503,7 +609,7 @@ export default function StudentsTable() {
       )}
 
       {/* Footer */}
-      {!loading && filteredPlayers && filteredPlayers.length > 0 && (
+      {!loading && filteredPlayers.length > 0 && (
         <div className="mt-4 pt-4 border-t border-[#BBF7D0] text-center">
           <p className="text-xs text-[#64748B]">
             Showing {filteredPlayers.length} student
