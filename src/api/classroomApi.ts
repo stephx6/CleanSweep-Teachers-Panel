@@ -1,4 +1,12 @@
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  writeBatch
+} from "firebase/firestore";
 import { db } from "../FirebaseConfig";
 const playerCollectionName = "PlayerData";
 const classRoomCollectionName = "ClassroomCodes";
@@ -126,8 +134,8 @@ const computeAnalytics = (
       accuracyPercentage: p.accuracyPercentage ?? 0,
       totalTrashSegregated: p.totalTrashSegregated ?? 0,
       envirocoins: p.envirocoins ?? 0,
-      pretestAccuracy : Math.round((p.pretestAccuracy ?? 0) * 100) / 100,
-      posttestAccuracy : Math.round((p.posttestAccuracy ?? 0) * 100) / 100,
+      pretestAccuracy: Math.round((p.pretestAccuracy ?? 0) * 100) / 100,
+      posttestAccuracy: Math.round((p.posttestAccuracy ?? 0) * 100) / 100,
       biodegradable: {
         correct: p.biodegradableCorrect ?? 0,
         wrong: p.biodegradableWrong ?? 0,
@@ -219,5 +227,71 @@ export async function getPlayerAnalyticsByClassCode(classroomCode: string) {
   return {
     ...analytics,
     classroomName: classroomDoc?.classroomName ?? null,
+  };
+}
+
+
+
+export async function deleteClassroom(UID: string, classroomCode: string) {
+  // 1. Get the teacher
+  const userRef = doc(db, playerCollectionName, UID);
+  const userSnapshot = await getDoc(userRef);
+
+  if (!userSnapshot.exists()) {
+    return null;
+  }
+
+  const user = userSnapshot.data();
+
+  // 2. Find the classroom
+  const classroomRef = collection(db, classRoomCollectionName);
+
+  const classroomQuery = query(
+    classroomRef,
+    where("code", "==", classroomCode),
+  );
+
+  const classroomSnapshot = await getDocs(classroomQuery);
+
+  if (classroomSnapshot.empty) {
+    return null;
+  }
+
+  const classroomDoc = classroomSnapshot.docs[0];
+  const classroomData = classroomDoc.data();
+
+  // 3. Check ownership
+  if (classroomData.createdBy !== user.name) {
+    throw new Error("Only the teacher who created this can delete it.");
+  }
+
+  // 4. Find all students in the classroom
+  const studentsRef = collection(db, playerCollectionName);
+
+  const studentsQuery = query(
+    studentsRef,
+    where("classroomCode", "==", classroomCode),
+  );
+
+  const studentsSnapshot = await getDocs(studentsQuery);
+
+  // 5. Delete the classroom and students
+  const batch = writeBatch(db);
+
+  // Delete classroom using its actual document reference
+  batch.delete(classroomDoc.ref);
+
+  // Delete all matching student documents
+  studentsSnapshot.docs.forEach((studentDoc) => {
+    batch.delete(studentDoc.ref);
+  });
+
+  // 6. Execute all deletions
+  await batch.commit();
+
+  return {
+    success: true,
+    deletedStudents: studentsSnapshot.size,
+    deletedClassroom: classroomCode,
   };
 }

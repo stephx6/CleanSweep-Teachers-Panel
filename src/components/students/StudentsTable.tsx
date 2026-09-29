@@ -341,18 +341,6 @@ export default function StudentsTable() {
         </div>
       )}
 
-      {/* ── Stats Badge ── */}
-      {!loading && filteredPlayers.length > 0 && (
-        <div className="mb-4 flex justify-end">
-          <div className="bg-[#F0FDF4] px-3 py-1 rounded-lg border border-[#BBF7D0]">
-            <span className="text-sm font-medium text-[#16A34A]">
-              Showing: {filteredPlayers.length} /{" "}
-              {totalPlayers?.length || 0} students
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* ── Content ── */}
       {loading ? (
         <LoadingSkeleton />
@@ -608,18 +596,7 @@ export default function StudentsTable() {
         />
       )}
 
-      {/* Footer */}
-      {!loading && filteredPlayers.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-[#BBF7D0] text-center">
-          <p className="text-xs text-[#64748B]">
-            Showing {filteredPlayers.length} student
-            {filteredPlayers.length !== 1 ? "s" : ""}
-            {searchTerm && ` matching "${searchTerm}"`}
-            {selectedClassroom !== "all" &&
-              ` in classroom ${selectedClassroom}`}
-          </p>
-        </div>
-      )}
+     
     </Card>
   );
 }
