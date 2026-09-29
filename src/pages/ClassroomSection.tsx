@@ -1,5 +1,8 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { getPlayerAnalyticsByClassCode } from "../api/classroomApi";
+import {
+  deleteClassroom,
+  getPlayerAnalyticsByClassCode,
+} from "../api/classroomApi";
 import { useEffect, useState } from "react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -12,6 +15,7 @@ import {
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import DefaultLayout from "../layout/DefaultLayout";
+import { getAuth } from "firebase/auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -102,7 +106,9 @@ function StatCard({
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-0.5">
             {label}
           </p>
-          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">{value}</p>
+          <p className="text-2xl font-bold text-gray-900 leading-none mb-1">
+            {value}
+          </p>
           {subtext && (
             <p className="text-xs text-gray-400 truncate">{subtext}</p>
           )}
@@ -136,7 +142,9 @@ function BinStatsCard({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-xl shrink-0">{icon}</span>
-          <span className="text-sm font-bold text-gray-800 truncate">{label}</span>
+          <span className="text-sm font-bold text-gray-800 truncate">
+            {label}
+          </span>
         </div>
         <span
           className={`text-sm font-bold px-2.5 py-0.5 rounded-full bg-white shadow-sm border border-gray-100 ${
@@ -207,8 +215,8 @@ function PlayerRow({ player, rank }: { player: PlayerRowData; rank: number }) {
             {displayName}
           </p>
           <div className="flex lg:hidden items-center gap-2 mt-0.5 text-xs text-gray-500">
-             <span>🗑️ {player.totalTrashSegregated ?? 0}</span>
-             <span>🪙 {player.envirocoins ?? 0}</span>
+            <span>🗑️ {player.totalTrashSegregated ?? 0}</span>
+            <span>🪙 {player.envirocoins ?? 0}</span>
           </div>
         </div>
       </div>
@@ -237,14 +245,18 @@ function PlayerRow({ player, rank }: { player: PlayerRowData; rank: number }) {
           <p className="text-sm font-bold text-gray-700">
             {player.totalTrashSegregated ?? 0}
           </p>
-          <p className="text-[10px] uppercase font-semibold text-gray-400">Items</p>
+          <p className="text-[10px] uppercase font-semibold text-gray-400">
+            Items
+          </p>
         </div>
 
         <div className="text-right hidden lg:block w-16">
           <p className="text-sm font-bold text-yellow-600 flex items-center justify-end gap-1">
             <span>🪙</span> {player.envirocoins ?? 0}
           </p>
-          <p className="text-[10px] uppercase font-semibold text-gray-400">Coins</p>
+          <p className="text-[10px] uppercase font-semibold text-gray-400">
+            Coins
+          </p>
         </div>
 
         <div className="text-right w-16 sm:w-20 bg-white px-2 py-1.5 rounded-lg border border-gray-100 shadow-sm">
@@ -259,7 +271,9 @@ function PlayerRow({ player, rank }: { player: PlayerRowData; rank: number }) {
           >
             {(player.accuracyPercentage ?? 0).toFixed(1)}%
           </p>
-          <p className="text-[9px] uppercase font-semibold text-gray-400 tracking-wider">Accuracy</p>
+          <p className="text-[9px] uppercase font-semibold text-gray-400 tracking-wider">
+            Accuracy
+          </p>
         </div>
       </div>
     </div>
@@ -326,6 +340,30 @@ export default function ClassroomSection() {
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user || !classroomId) {
+    return null;
+  }
+
+  const handleDelete = async (UID: string, classroomCode: string) => {
+    try {
+      setLoading(true);
+
+      const result = await deleteClassroom(UID, classroomCode);
+
+      if (result?.success) {
+        alert("Successfully deleted classroom");
+        navigate("/classrooms");
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      alert(`Something went wrong ${err}`);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchClassroomPlayers = async () => {
@@ -378,15 +416,16 @@ export default function ClassroomSection() {
 
   const hasPlayers = !!analytics && analytics.totalPlayers > 0;
   const sortedPlayers = analytics
-    ? [...analytics.perPlayer].sort(
-        (a, b) => (b.accuracyPercentage ?? 0) - (a.accuracyPercentage ?? 0),
-      ).slice(0, 10)
+    ? [...analytics.perPlayer]
+        .sort(
+          (a, b) => (b.accuracyPercentage ?? 0) - (a.accuracyPercentage ?? 0),
+        )
+        .slice(0, 10)
     : [];
-    
+
   return (
     <DefaultLayout>
       <div className="space-y-6">
-        
         {/* Navigation Return */}
         <div>
           <Button
@@ -411,13 +450,31 @@ export default function ClassroomSection() {
               Classroom analytics and overall student performance
             </p>
           </div>
-          <Button
-            variant="primary"
-            onClick={() => navigate(`/classrooms/${classroomId}/mystudents`)}
-            className="w-full sm:w-auto"
-          >
-            See All My Students
-          </Button>
+          <div className="flex gap-5">
+            <Button
+              variant="primary"
+              onClick={() => navigate(`/classrooms/${classroomId}/mystudents`)}
+              className="w-full sm:w-auto"
+            >
+              See All My Students
+            </Button>
+            <Button
+              variant="danger"
+              className="sm:w-auto"
+              onClick={() => {
+                const confirmed = window.confirm(
+                  "Are you sure you want to delete this classroom? All students associated with this classroom will also be deleted. This action cannot be undone.",
+                );
+
+                if (confirmed) {
+                  handleDelete(user.uid, classroomId);
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? "Deleting classroom..." : "Delete Classroom"}
+            </Button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -462,7 +519,7 @@ export default function ClassroomSection() {
               Overall classroom accuracy breakdown by specific waste type
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <BinStatsCard
               icon="🟤"
@@ -506,9 +563,7 @@ export default function ClassroomSection() {
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <span>👥</span> Player Rankings
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Top 10 Players
-              </p>
+              <p className="text-sm text-gray-500 mt-1">Top 10 Players</p>
             </div>
           </div>
 
