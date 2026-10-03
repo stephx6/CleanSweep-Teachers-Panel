@@ -9,7 +9,6 @@ import Button from "../components/ui/Button";
 import {
   UsersIcon,
   TrophyIcon,
-  ChartBarIcon,
   ArrowPathIcon,
   UserGroupIcon,
   ArrowLeftIcon,
