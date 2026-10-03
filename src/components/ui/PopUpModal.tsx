@@ -182,10 +182,10 @@ export default function PopUpModal({
                 }
               />
               <BinStatRow
-                icon="🟣"
+                icon="🟠"
                 label="Special Waste"
                 correct={specialCorrect}
-                wrong={specialWrong}
+                wrong={specialWrong}  
                 barColor="bg-purple-400"
                 pctColor={
                   calcPct(specialCorrect, specialWrong) >= 50

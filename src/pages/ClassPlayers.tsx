@@ -1,16 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getPlayerAnalyticsByClassCode } from "../api/classroomApi";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/InputField";
-import { ArrowLeftIcon, UserPlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowLeftIcon,
+  UserPlusIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import { addStudents } from "../api/studentApi";
 import DefaultLayout from "../layout/DefaultLayout";
 import type { Player } from "../types/playerTypes";
-// ─── Types ────────────────────────────────────────────────────────────────────
 
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-
+const ITEMS_PER_PAGE = 10;
 
 // ─── Accuracy Badge ───────────────────────────────────────────────────────────
 
@@ -58,7 +62,9 @@ function BinPill({
         {label}
       </span>
 
-      <span className="text-[10px] font-bold leading-tight">{pct}%</span>
+      <span className="text-[10px] font-bold leading-tight">
+        {pct}%
+      </span>
 
       <span className="text-[8px] text-gray-400 leading-tight">
         {correct}/{total}
@@ -148,6 +154,7 @@ function LoadingSkeleton() {
 
 export default function ClassPlayers() {
   const { classroomId } = useParams();
+  const navigate = useNavigate();
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,7 +164,32 @@ export default function ClassPlayers() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const navigate = useNavigate();
+  // ─── Pagination ────────────────────────────────────────────────────────────
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(players.length / ITEMS_PER_PAGE);
+
+  const paginatedPlayers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+
+    return players.slice(
+      startIndex,
+      startIndex + ITEMS_PER_PAGE,
+    );
+  }, [players, currentPage]);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+
+    if (players.length === 0) {
+      setCurrentPage(1);
+    }
+  }, [players.length, currentPage, totalPages]);
+
+  // ─── Fetch Players ─────────────────────────────────────────────────────────
 
   const fetchPlayers = async () => {
     if (!classroomId) return;
@@ -166,7 +198,9 @@ export default function ClassPlayers() {
       setLoading(true);
 
       const data = await getPlayerAnalyticsByClassCode(classroomId);
+
       console.log(data);
+
       setPlayers(data.perPlayer || []);
     } catch (error) {
       console.error("Failed to fetch classroom players:", error);
@@ -177,8 +211,11 @@ export default function ClassPlayers() {
 
   useEffect(() => {
     fetchPlayers();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classroomId]);
+
+  // ─── Add Student ───────────────────────────────────────────────────────────
 
   const handleAddStudent = () => {
     setShowAddModal(true);
@@ -212,272 +249,564 @@ export default function ClassPlayers() {
       });
 
       closeAddStudentModal();
+
       await fetchPlayers();
     } catch (error) {
       console.error("Failed to add student:", error);
+
       setSubmitError("Failed to add student. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  // ─── Render ────────────────────────────────────────────────────────────────
+
   return (
-   <DefaultLayout>
-  <div className="space-y-6">
-    {/* Return Navigation */}
-    <div>
-      <Button
-        variant="ghost"
-        size="sm"
-        leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
-        onClick={() => navigate(-1)}
-        className="text-gray-500 hover:text-gray-900 -ml-2"
-      >
-        Return
-      </Button>
-    </div>
+    <DefaultLayout>
+      <div className="space-y-6">
 
-    {/* Header */}
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div>
-        <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-2">
-          <span>👨‍🎓</span>
-          Students
-        </h1>
-        <p className="text-sm text-[#64748B] mt-1">
-          {players.length} student{players.length !== 1 ? "s" : ""} enrolled
-        </p>
-      </div>
-      <Button
-        variant="primary"
-        size="md"
-        onClick={handleAddStudent}
-        className="whitespace-nowrap w-full sm:w-auto"
-      >
-        <UserPlusIcon className="w-4 h-4 mr-1.5" />
-        Add Student
-      </Button>
-    </div>
+        {/* Return Navigation */}
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
+            onClick={() => navigate(-1)}
+            className="text-gray-500 hover:text-gray-900 -ml-2"
+          >
+            Return
+          </Button>
+        </div>
 
-    {/* Content */}
-    {loading ? (
-      <LoadingSkeleton />
-    ) : (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#F8FAFC] border-b border-gray-200">
-                <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Student ID</th>
-                <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Student Name</th>
-                <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">IGN</th>
-                <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Accuracy</th>
-                <th className="py-4 px-4 text-sm font-semibold text-gray-700 min-w-[280px]">Bin Breakdown</th>
-                <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Pre-test</th>
-                <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Post-test</th>
-                <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Segregated</th>
-                <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Coins</th>
-              </tr>
-            </thead>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-2">
+              <span>👨‍🎓</span>
+              Students
+            </h1>
 
-            <tbody className="divide-y divide-gray-100">
-              {players.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-16">
-                    <div className="flex flex-col items-center justify-center text-gray-400 gap-3">
-                      <span className="text-5xl">👨‍🎓</span>
-                      <p className="text-sm font-medium text-gray-500">No students yet</p>
-                      <p className="text-xs text-gray-400">Add your first student to get started</p>
-                      <Button variant="outline" size="sm" className="mt-2" onClick={handleAddStudent}>
-                        <UserPlusIcon className="w-4 h-4 mr-1" />
-                        Add Student
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                players.map((player) => (
-                  <tr
-                    key={player.id ?? player.studentId ?? player.username}
-                    className="hover:bg-emerald-50/50 transition-colors"
-                  >
-                    <td className="py-3 px-4 font-mono text-sm text-gray-500 whitespace-nowrap">
-                      {player.studentId || "—"}
-                    </td>
-                    <td className="py-3 px-4 font-medium text-gray-900 whitespace-nowrap">
-                      {player.studentName || "—"}
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs shrink-0">
-                          {player.username?.charAt(0).toUpperCase() ?? "?"}
+            <p className="text-sm text-[#64748B] mt-1">
+              {players.length} student
+              {players.length !== 1 ? "s" : ""} enrolled
+            </p>
+          </div>
+
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleAddStudent}
+            className="whitespace-nowrap w-full sm:w-auto"
+          >
+            <UserPlusIcon className="w-4 h-4 mr-1.5" />
+            Add Student
+          </Button>
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <LoadingSkeleton />
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+
+                <thead>
+                  <tr className="bg-[#F8FAFC] border-b border-gray-200">
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Student ID
+                    </th>
+
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Student Name
+                    </th>
+
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      IGN
+                    </th>
+
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Accuracy
+                    </th>
+
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-700 min-w-[280px]">
+                      Bin Breakdown
+                    </th>
+
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Pre-test
+                    </th>
+
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Post-test
+                    </th>
+
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Segregated
+                    </th>
+
+                    <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">
+                      Coins
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-gray-100">
+                  {players.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-16">
+                        <div className="flex flex-col items-center justify-center text-gray-400 gap-3">
+                          <span className="text-5xl">👨‍🎓</span>
+
+                          <p className="text-sm font-medium text-gray-500">
+                            No students yet
+                          </p>
+
+                          <p className="text-xs text-gray-400">
+                            Add your first student to get started
+                          </p>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                            onClick={handleAddStudent}
+                          >
+                            <UserPlusIcon className="w-4 h-4 mr-1" />
+                            Add Student
+                          </Button>
                         </div>
-                        <span className="font-medium text-gray-900">
-                          {player.username || "Unknown"}
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedPlayers.map((player) => (
+                      <tr
+                        key={
+                          player.id ??
+                          player.studentId ??
+                          player.username
+                        }
+                        className="hover:bg-emerald-50/50 transition-colors"
+                      >
+                        {/* Student ID */}
+                        <td className="py-3 px-4 font-mono text-sm text-gray-500 whitespace-nowrap">
+                          {player.studentId || "—"}
+                        </td>
+
+                        {/* Student Name */}
+                        <td className="py-3 px-4 font-medium text-gray-900 whitespace-nowrap">
+                          {player.studentName || "—"}
+                        </td>
+
+                        {/* IGN */}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs shrink-0">
+                              {player.username
+                                ?.charAt(0)
+                                .toUpperCase() ?? "?"}
+                            </div>
+
+                            <span className="font-medium text-gray-900">
+                              {player.username || "Unknown"}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Accuracy */}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <AccuracyBadge
+                            value={player.accuracyPercentage ?? 0}
+                          />
+                        </td>
+
+                        {/* Bin Breakdown */}
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <BinPill
+                              icon="🟤"
+                              label="Bio"
+                              correct={
+                                player.biodegradable?.correct ?? 0
+                              }
+                              wrong={
+                                player.biodegradable?.wrong ?? 0
+                              }
+                              color="bg-amber-50 border-amber-200 text-amber-700"
+                            />
+
+                            <BinPill
+                              icon="🔵"
+                              label="Recycle"
+                              correct={
+                                player.recyclable?.correct ?? 0
+                              }
+                              wrong={
+                                player.recyclable?.wrong ?? 0
+                              }
+                              color="bg-blue-50 border-blue-200 text-blue-700"
+                            />
+
+                            <BinPill
+                              icon="⚫"
+                              label="Residual"
+                              correct={
+                                player.residual?.correct ?? 0
+                              }
+                              wrong={
+                                player.residual?.wrong ?? 0
+                              }
+                              color="bg-gray-50 border-gray-200 text-gray-600"
+                            />
+
+                            <BinPill
+                              icon="🟠"
+                              label="Special"
+                              correct={
+                                player.specialWaste?.correct ?? 0
+                              }
+                              wrong={
+                                player.specialWaste?.wrong ?? 0
+                              }
+                              color="bg-pink-50 border-pink-200 text-pink-700"
+                            />
+                          </div>
+                        </td>
+
+                        {/* Pre-test */}
+                        <td className="py-3 px-4 font-mono text-sm text-gray-500 whitespace-nowrap">
+                          {player.pretestAccuracy ?? 0}%
+                        </td>
+
+                        {/* Post-test */}
+                        <td className="py-3 px-4 font-mono text-sm text-gray-500 whitespace-nowrap">
+                          {player.posttestAccuracy ?? 0}%
+                        </td>
+
+                        {/* Segregated */}
+                        <td className="py-3 px-4 font-mono text-sm text-gray-500 whitespace-nowrap">
+                          {player.totalTrashSegregated ?? 0}
+                        </td>
+
+                        {/* Coins */}
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            <span className="text-yellow-500">
+                              🪙
+                            </span>
+
+                            <span className="font-semibold text-gray-900">
+                              {player.envirocoins || 0}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden divide-y divide-gray-200 bg-gray-50/50">
+              {players.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-3 bg-white">
+                  <span className="text-5xl">👨‍🎓</span>
+
+                  <p className="text-sm font-medium text-gray-500">
+                    No students yet
+                  </p>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={handleAddStudent}
+                  >
+                    <UserPlusIcon className="w-4 h-4 mr-1" />
+                    Add Student
+                  </Button>
+                </div>
+              ) : (
+                paginatedPlayers.map((player) => (
+                  <div
+                    key={
+                      player.id ??
+                      player.studentId ??
+                      player.username
+                    }
+                    className="p-4 bg-white"
+                  >
+
+                    {/* Mobile Header */}
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm shrink-0">
+                          {player.username
+                            ?.charAt(0)
+                            .toUpperCase() ?? "?"}
+                        </div>
+
+                        <div>
+                          <h3 className="font-semibold text-gray-900">
+                            {player.username || "Unknown"}
+                          </h3>
+
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {player.studentName || "—"}{" "}
+                            {player.studentId
+                              ? `· ID: ${player.studentId}`
+                              : ""}
+                          </p>
+                        </div>
+                      </div>
+
+                      <AccuracyBadge
+                        value={player.accuracyPercentage ?? 0}
+                      />
+                    </div>
+
+                    {/* Mobile Stats Grid */}
+                    <div className="grid grid-cols-4 gap-2 py-3 border-y border-gray-100 mb-3 bg-gray-50/50 rounded-lg px-2">
+
+                      <div className="text-center">
+                        <span className="block text-[10px] text-gray-500 uppercase font-medium">
+                          Pre-test
+                        </span>
+
+                        <span className="block text-sm font-mono text-gray-700 mt-0.5">
+                          {player.pretestAccuracy ?? 0}%
                         </span>
                       </div>
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <AccuracyBadge value={player.accuracyPercentage ?? 0} />
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <BinPill icon="🟤" label="Bio" correct={player.biodegradable?.correct ?? 0} wrong={player.biodegradable?.wrong ?? 0} color="bg-amber-50 border-amber-200 text-amber-700" />
-                        <BinPill icon="🔵" label="Recycle" correct={player.recyclable?.correct ?? 0} wrong={player.recyclable?.wrong ?? 0} color="bg-blue-50 border-blue-200 text-blue-700" />
-                        <BinPill icon="⚫" label="Residual" correct={player.residual?.correct ?? 0} wrong={player.residual?.wrong ?? 0} color="bg-gray-50 border-gray-200 text-gray-600" />
-                        <BinPill icon="🟣" label="Special" correct={player.specialWaste?.correct ?? 0} wrong={player.specialWaste?.wrong ?? 0} color="bg-purple-50 border-purple-200 text-purple-700" />
+
+                      <div className="text-center border-l border-gray-200">
+                        <span className="block text-[10px] text-gray-500 uppercase font-medium">
+                          Post-test
+                        </span>
+
+                        <span className="block text-sm font-mono text-gray-700 mt-0.5">
+                          {player.posttestAccuracy ?? 0}%
+                        </span>
                       </div>
-                    </td>
-                    <td className="py-3 px-4 font-mono text-sm text-gray-500 whitespace-nowrap">
-                      {player.pretestAccuracy ?? 0}%
-                    </td>
-                    <td className="py-3 px-4 font-mono text-sm text-gray-500 whitespace-nowrap">
-                      {player.posttestAccuracy ?? 0}%
-                    </td>
-                    <td className="py-3 px-4 font-mono text-sm text-gray-500 whitespace-nowrap">
-                      {player.totalTrashSegregated ?? 0}
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        <span className="text-yellow-500">🪙</span>
-                        <span className="font-semibold text-gray-900">{player.envirocoins || 0}</span>
+
+                      <div className="text-center border-l border-gray-200">
+                        <span className="block text-[10px] text-gray-500 uppercase font-medium">
+                          Items
+                        </span>
+
+                        <span className="block text-sm font-mono text-gray-700 mt-0.5">
+                          {player.totalTrashSegregated ?? 0}
+                        </span>
                       </div>
-                    </td>
-                  </tr>
+
+                      <div className="text-center border-l border-gray-200">
+                        <span className="block text-[10px] text-gray-500 uppercase font-medium">
+                          Coins
+                        </span>
+
+                        <div className="flex items-center justify-center gap-1 mt-0.5">
+                          <span className="text-yellow-500 text-xs">
+                            🪙
+                          </span>
+
+                          <span className="text-sm font-semibold text-gray-700">
+                            {player.envirocoins || 0}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Mobile Bins Breakdown */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <BinPill
+                        icon="🟤"
+                        label="Bio"
+                        correct={
+                          player.biodegradable?.correct ?? 0
+                        }
+                        wrong={
+                          player.biodegradable?.wrong ?? 0
+                        }
+                        color="bg-amber-50 border-amber-200 text-amber-700"
+                      />
+
+                      <BinPill
+                        icon="🔵"
+                        label="Recycle"
+                        correct={
+                          player.recyclable?.correct ?? 0
+                        }
+                        wrong={
+                          player.recyclable?.wrong ?? 0
+                        }
+                        color="bg-blue-50 border-blue-200 text-blue-700"
+                      />
+
+                      <BinPill
+                        icon="⚫"
+                        label="Residual"
+                        correct={
+                          player.residual?.correct ?? 0
+                        }
+                        wrong={
+                          player.residual?.wrong ?? 0
+                        }
+                        color="bg-gray-50 border-gray-200 text-gray-600"
+                      />
+
+                      <BinPill
+                        icon="🟣"
+                        label="Special"
+                        correct={
+                          player.specialWaste?.correct ?? 0
+                        }
+                        wrong={
+                          player.specialWaste?.wrong ?? 0
+                        }
+                        color="bg-pink-50 border-pink-200 text-pink-700"
+                      />
+                    </div>
+                  </div>
                 ))
               )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile View */}
-        <div className="md:hidden divide-y divide-gray-200 bg-gray-50/50">
-          {players.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400 gap-3 bg-white">
-              <span className="text-5xl">👨‍🎓</span>
-              <p className="text-sm font-medium text-gray-500">No students yet</p>
-              <Button variant="outline" size="sm" className="mt-2" onClick={handleAddStudent}>
-                <UserPlusIcon className="w-4 h-4 mr-1" />
-                Add Student
-              </Button>
             </div>
-          ) : (
-            players.map((player) => (
-              <div key={player.id ?? player.studentId ?? player.username} className="p-4 bg-white">
-                
-                {/* Mobile Header: User Info */}
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm shrink-0">
-                      {player.username?.charAt(0).toUpperCase() ?? "?"}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{player.username || "Unknown"}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {player.studentName || "—"} {player.studentId ? `· ID: ${player.studentId}` : ""}
-                      </p>
-                    </div>
-                  </div>
-                  <AccuracyBadge value={player.accuracyPercentage ?? 0} />
-                </div>
 
-                {/* Mobile Stats Grid */}
-                <div className="grid grid-cols-4 gap-2 py-3 border-y border-gray-100 mb-3 bg-gray-50/50 rounded-lg px-2">
-                  <div className="text-center">
-                    <span className="block text-[10px] text-gray-500 uppercase font-medium">Pre-test</span>
-                    <span className="block text-sm font-mono text-gray-700 mt-0.5">{player.pretestAccuracy ?? 0}%</span>
-                  </div>
-                  <div className="text-center border-l border-gray-200">
-                    <span className="block text-[10px] text-gray-500 uppercase font-medium">Post-test</span>
-                    <span className="block text-sm font-mono text-gray-700 mt-0.5">{player.posttestAccuracy ?? 0}%</span>
-                  </div>
-                  <div className="text-center border-l border-gray-200">
-                    <span className="block text-[10px] text-gray-500 uppercase font-medium">Items</span>
-                    <span className="block text-sm font-mono text-gray-700 mt-0.5">{player.totalTrashSegregated ?? 0}</span>
-                  </div>
-                  <div className="text-center border-l border-gray-200">
-                    <span className="block text-[10px] text-gray-500 uppercase font-medium">Coins</span>
-                    <div className="flex items-center justify-center gap-1 mt-0.5">
-                      <span className="text-yellow-500 text-xs">🪙</span>
-                      <span className="text-sm font-semibold text-gray-700">{player.envirocoins || 0}</span>
-                    </div>
-                  </div>
-                </div>
+            {/* Pagination */}
+            {players.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-200 bg-white">
 
-                {/* Mobile Bins Breakdown */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <BinPill icon="🟤" label="Bio" correct={player.biodegradable?.correct ?? 0} wrong={player.biodegradable?.wrong ?? 0} color="bg-amber-50 border-amber-200 text-amber-700" />
-                  <BinPill icon="🔵" label="Recycle" correct={player.recyclable?.correct ?? 0} wrong={player.recyclable?.wrong ?? 0} color="bg-blue-50 border-blue-200 text-blue-700" />
-                  <BinPill icon="⚫" label="Residual" correct={player.residual?.correct ?? 0} wrong={player.residual?.wrong ?? 0} color="bg-gray-50 border-gray-200 text-gray-600" />
-                  <BinPill icon="🟣" label="Special" correct={player.specialWaste?.correct ?? 0} wrong={player.specialWaste?.wrong ?? 0} color="bg-purple-50 border-purple-200 text-purple-700" />
-                </div>
+                {/* Showing Count */}
+                <p className="text-sm text-gray-500">
+                  Showing{" "}
+                  <span className="font-medium text-gray-700">
+                    {(currentPage - 1) * ITEMS_PER_PAGE + 1}
+                  </span>{" "}
+                  to{" "}
+                  <span className="font-medium text-gray-700">
+                    {Math.min(
+                      currentPage * ITEMS_PER_PAGE,
+                      players.length,
+                    )}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-medium text-gray-700">
+                    {players.length}
+                  </span>{" "}
+                  students
+                </p>
 
+                {/* Pagination Controls */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentPage((page) =>
+                        Math.max(page - 1, 1),
+                      )
+                    }
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+
+                  <span className="text-sm text-gray-600 px-2 whitespace-nowrap">
+                    Page {currentPage} of {totalPages}
+                  </span>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentPage((page) =>
+                        Math.min(page + 1, totalPages),
+                      )
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
-            ))
-          )}
-        </div>
-      </div>
-    )}
-
-    {/* Add Student Modal */}
-    {showAddModal && (
-      <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-        <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-xl font-bold text-gray-900">Add New Student</h2>
-            <button
-              onClick={closeAddStudentModal}
-              className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <XMarkIcon className="w-5 h-5" />
-            </button>
-          </div>
-
-          <p className="text-sm text-gray-500 mb-6">
-            Enter the student's name to add them to this classroom.
-          </p>
-
-          <div className="space-y-2">
-            <Input
-              placeholder="e.g. Jane Doe"
-              size="md"
-              fullWidth
-              value={studentName}
-              onChange={(e) => setStudentName(e.target.value)}
-              autoFocus
-            />
-            {submitError && (
-              <p className="text-sm text-red-500 flex items-center gap-1">
-                <span className="text-xs">⚠️</span> {submitError}
-              </p>
             )}
           </div>
+        )}
 
-          <div className="flex gap-3 mt-8">
-            <Button
-              variant="outline"
-              size="md"
-              className="flex-1"
-              onClick={closeAddStudentModal}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              className="flex-1"
-              onClick={handleSubmitAddStudent}
-              disabled={submitting || !studentName.trim()}
-            >
-              {submitting ? "Adding..." : "Add Student"}
-            </Button>
+        {/* Add Student Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+
+              {/* Modal Header */}
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Add New Student
+                </h2>
+
+                <button
+                  onClick={closeAddStudentModal}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-500 mb-6">
+                Enter the student's name to add them to this classroom.
+              </p>
+
+              {/* Input */}
+              <div className="space-y-2">
+                <Input
+                  placeholder="e.g. Jane Doe"
+                  size="md"
+                  fullWidth
+                  value={studentName}
+                  onChange={(e) =>
+                    setStudentName(e.target.value)
+                  }
+                  autoFocus
+                />
+
+                {submitError && (
+                  <p className="text-sm text-red-500 flex items-center gap-1">
+                    <span className="text-xs">⚠️</span>
+                    {submitError}
+                  </p>
+                )}
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex gap-3 mt-8">
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="flex-1"
+                  onClick={closeAddStudentModal}
+                  disabled={submitting}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="flex-1"
+                  onClick={handleSubmitAddStudent}
+                  disabled={
+                    submitting || !studentName.trim()
+                  }
+                >
+                  {submitting ? "Adding..." : "Add Student"}
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
-    )}
-  </div>
-</DefaultLayout>
+    </DefaultLayout>
   );
 }
