@@ -425,7 +425,7 @@ export default function StudentsTable() {
                         />
 
                         <BinPill
-                          icon="🟣"
+                          icon="🟠"
                           label="Special"
                           correct={player.specialWasteCorrect ?? 0}
                           wrong={player.specialWasteWrong ?? 0}

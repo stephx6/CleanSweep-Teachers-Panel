@@ -9,7 +9,6 @@ import Button from "../components/ui/Button";
 import {
   UsersIcon,
   TrophyIcon,
-  ChartBarIcon,
   ArrowPathIcon,
   UserGroupIcon,
   ArrowLeftIcon,
@@ -234,7 +233,7 @@ function PlayerRow({ player, rank }: { player: PlayerRowData; rank: number }) {
         </span>
         {player.specialWaste && (
           <span className="px-2 py-1 bg-purple-50 rounded-md border border-purple-100 text-purple-700">
-            🟣 {specialWastePercentage}%
+            🟠 {specialWastePercentage}%
           </span>
         )}
       </div>
@@ -285,10 +284,12 @@ function PlayerRow({ player, rank }: { player: PlayerRowData; rank: number }) {
 function EmptyRankings() {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-3">
-      <span className="text-5xl">📚</span>
-      <p className="text-sm font-bold text-gray-500">No players found</p>
-      <p className="text-xs text-gray-400">
-        This classroom has no active players yet
+      <span className="text-5xl">🏆</span>
+      <p className="text-sm font-bold text-gray-500">
+        No qualified players yet
+      </p>
+      <p className="text-xs text-gray-400 text-center">
+        Players need at least 20 matches to appear on the leaderboard.
       </p>
     </div>
   );
@@ -414,15 +415,19 @@ export default function ClassroomSection() {
     );
   }
 
-  const hasPlayers = !!analytics && analytics.totalPlayers > 0;
-  const sortedPlayers = analytics
-    ? [...analytics.perPlayer]
-        .sort(
-          (a, b) => (b.accuracyPercentage ?? 0) - (a.accuracyPercentage ?? 0),
-        )
-        .slice(0, 10)
+  const MIN_TRASH = 30;
+
+  const qualifiedPlayers = analytics
+    ? analytics.perPlayer.filter(
+        (player) => player.totalTrashSegregated >= MIN_TRASH,
+      )
     : [];
 
+  const sortedPlayers = [...qualifiedPlayers]
+    .sort((a, b) => (b.accuracyPercentage ?? 0) - (a.accuracyPercentage ?? 0))
+    .slice(0, 10);
+
+  const hasQualifiedPlayers = sortedPlayers.length > 0;
   return (
     <DefaultLayout>
       <div className="space-y-6">
@@ -486,13 +491,7 @@ export default function ClassroomSection() {
             subtext="Enrolled students"
             color="emerald"
           />
-          <StatCard
-            icon={<ChartBarIcon className="w-6 h-6" />}
-            label="Total Attempts"
-            value={analytics?.totalAttempts ?? 0}
-            subtext={`${analytics?.totalCorrect ?? 0} right, ${analytics?.totalWrong ?? 0} wrong`}
-            color="blue"
-          />
+        
           <StatCard
             icon={<TrophyIcon className="w-6 h-6" />}
             label="Overall Accuracy"
@@ -546,7 +545,7 @@ export default function ClassroomSection() {
               color="border-gray-200 bg-gray-50/50"
             />
             <BinStatsCard
-              icon="🟣"
+              icon="🟠"
               label="Special Waste"
               correct={analytics?.specialWasteCorrect ?? 0}
               wrong={analytics?.specialWasteWrong ?? 0}
@@ -563,11 +562,17 @@ export default function ClassroomSection() {
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <span>👥</span> Player Rankings
               </h2>
-              <p className="text-sm text-gray-500 mt-1">Top 10 Players</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Top Players of the section
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Players must complete at least 30 trash segregated to qualify for the
+                rankings.
+              </p>
             </div>
           </div>
 
-          {hasPlayers ? (
+          {hasQualifiedPlayers ? (
             <div className="space-y-3">
               {sortedPlayers.map((player, index) => (
                 <PlayerRow
