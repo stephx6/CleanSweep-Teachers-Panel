@@ -50,6 +50,7 @@ export default function LoginForm() {
               </p>
             </div>
           </div>
+
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-4 py-3">
@@ -69,6 +70,7 @@ export default function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               value={email}
             />
+
             <Input
               label="Password"
               type="password"
@@ -76,10 +78,21 @@ export default function LoginForm() {
               leftIcon={<LockClosedIcon className="w-5 h-5" />}
               showPasswordToggle
               size="md"
-              fullWidth={true} // Added fullWidth
+              fullWidth={true}
               onChange={(e) => setPassword(e.target.value)}
               value={password}
             />
+
+            {/* Forgot Password */}
+            <div className="flex justify-end -mt-2">
+              <button
+                type="button"
+                className="text-sm font-medium text-[#16A34A] hover:text-[#14532D] hover:underline transition-colors"
+                onClick={() => navigate("forgot-password")}
+              >
+                Forgot password?
+              </button>
+            </div>
           </div>
 
           {/* Submit Button */}
@@ -93,6 +106,8 @@ export default function LoginForm() {
           >
             {loading ? "Logging in..." : "Log In"}
           </Button>
+
+          {/* Sign Up */}
           <div className="flex items-center justify-between mx-5 text-sm">
             <span className="text-muted-foreground">
               Don't have an account?

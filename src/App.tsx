@@ -10,6 +10,7 @@ import AdminProvider from "./context/AdminProvider";
 import Reports from "./pages/Reports";
 import ClassPlayers from "./pages/ClassPlayers";
 import RedeemCodes from "./pages/RedeemCodes";
+import ForgotPassword from "./features/auth/ForgotPassword";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route
               path="/dashboard"
               element={
