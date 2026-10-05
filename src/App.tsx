@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminProvider from "./context/AdminProvider";
 import Reports from "./pages/Reports";
 import ClassPlayers from "./pages/ClassPlayers";
+import RedeemCodes from "./pages/RedeemCodes";
 import ForgotPassword from "./features/auth/ForgotPassword";
 
 function App() {
@@ -71,6 +72,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Reports />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/redeem-codes"
+              element={
+                <ProtectedRoute>
+                  <RedeemCodes />
                 </ProtectedRoute>
               }
             />

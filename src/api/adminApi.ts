@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../FirebaseConfig";
 import { getAuth } from "firebase/auth";
+import { generateRandomCode } from "../helpers";
 import type { ClassroomCode, PlayerAnalytics } from "../types/dashboardTypes";
 
 // Collections
@@ -261,16 +262,6 @@ export const getPlayerAnalytics = async (): Promise<PlayerAnalytics> => {
 };
 
 // ─── Classroom codes ──────────────────────────────────────────────────────────
-
-// Generate a random classroom code
-const generateRandomCode = (): string => {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "";
-  for (let i = 0; i < 8; i++) {
-    code += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return code;
-};
 
 // Create a new classroom code
 export const createClassroomCode = async (

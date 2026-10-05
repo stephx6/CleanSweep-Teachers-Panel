@@ -6,6 +6,7 @@ import {
   UsersIcon,
   XMarkIcon,
   PencilIcon,
+  GiftIcon,
 } from "@heroicons/react/24/outline";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -48,9 +49,7 @@ export default function Aside({ onClose }: AsideProps) {
           </li>
           <li>
             <Button
-              variant={
-                isActive("/classrooms") ? "primary" : "ghost"
-              }
+              variant={isActive("/classrooms") ? "primary" : "ghost"}
               className="w-full justify-start"
               leftIcon={<PencilIcon className="w-5 h-5" />}
               onClick={() => {
@@ -73,7 +72,18 @@ export default function Aside({ onClose }: AsideProps) {
               Student List
             </Button>
           </li>
-
+          <li>
+            <Button
+              variant={isActive("/redeem-codes") ? "primary" : "ghost"}
+              className="w-full justify-start"
+              leftIcon={<GiftIcon className="w-5 h-5" />}
+              onClick={() => {
+                navigate("/redeem-codes");
+              }}
+            >
+              Redeem Codes
+            </Button>
+          </li>
           <li>
             <Button
               variant={isActive("/reports") ? "primary" : "ghost"}
