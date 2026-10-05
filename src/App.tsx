@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminProvider from "./context/AdminProvider";
 import Reports from "./pages/Reports";
 import ClassPlayers from "./pages/ClassPlayers";
+import RedeemCodes from "./pages/RedeemCodes";
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Login />} />
-            <Route path="/signup" element={<SignUp/>}/>
+            <Route path="/signup" element={<SignUp />} />
             <Route
               path="/dashboard"
               element={
@@ -55,20 +56,29 @@ function App() {
               }
             />
 
-            <Route 
+            <Route
               path="/classrooms/:classroomId/mystudents"
               element={
                 <ProtectedRoute>
-                  <ClassPlayers/>
+                  <ClassPlayers />
                 </ProtectedRoute>
               }
-              />
-              
+            />
+
             <Route
               path="/reports"
               element={
                 <ProtectedRoute>
                   <Reports />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/redeem-codes"
+              element={
+                <ProtectedRoute>
+                  <RedeemCodes />
                 </ProtectedRoute>
               }
             />
