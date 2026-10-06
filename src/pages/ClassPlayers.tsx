@@ -7,8 +7,11 @@ import {
   ArrowLeftIcon,
   UserPlusIcon,
   XMarkIcon,
+  PlusIcon,
+  TrashIcon,
+  PencilSquareIcon,
 } from "@heroicons/react/24/outline";
-import { addStudents } from "../api/studentApi";
+import { addStudentsBulk, updateStudentName } from "../api/studentApi";
 import DefaultLayout from "../layout/DefaultLayout";
 import type { Player } from "../types/playerTypes";
 
@@ -62,9 +65,7 @@ function BinPill({
         {label}
       </span>
 
-      <span className="text-[10px] font-bold leading-tight">
-        {pct}%
-      </span>
+      <span className="text-[10px] font-bold leading-tight">{pct}%</span>
 
       <span className="text-[8px] text-gray-400 leading-tight">
         {correct}/{total}
@@ -160,9 +161,77 @@ export default function ClassPlayers() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const [studentName, setStudentName] = useState<string>("");
+  const [studentNames, setStudentNames] = useState<string[]>([""]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // ─── Edit Student Name ─────────────────────────────────────────────────────
+
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const openEditModal = (player: Player) => {
+    setEditingPlayer(player);
+    setEditName(player.studentName ?? "");
+    setEditError(null);
+  };
+
+  const closeEditModal = () => {
+    setEditingPlayer(null);
+    setEditName("");
+    setEditError(null);
+  };
+
+  const handleSubmitEditName = async () => {
+    if (!editingPlayer || !classroomId) return;
+
+    const trimmed = editName.trim();
+
+    if (!trimmed) {
+      setEditError("Please enter a student name.");
+      return;
+    }
+
+    if (!editingPlayer.studentId) {
+      setEditError("Cannot update this student: missing student ID.");
+      return;
+    }
+
+    if (trimmed === (editingPlayer.studentName ?? "")) {
+      closeEditModal();
+      return;
+    }
+
+    try {
+      setEditSubmitting(true);
+      setEditError(null);
+
+      await updateStudentName({
+        studentId: editingPlayer.studentId,
+        classroomId,
+        studentName: trimmed,
+        docId: editingPlayer.id,
+      });
+
+      // Update locally so the table doesn't flash a loading skeleton
+      setPlayers((prev) =>
+        prev.map((p) =>
+          p.studentId === editingPlayer.studentId
+            ? { ...p, studentName: trimmed }
+            : p,
+        ),
+      );
+
+      closeEditModal();
+    } catch (error) {
+      console.error("Failed to update student name:", error);
+      setEditError("Failed to update name. Please try again.");
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
 
   // ─── Pagination ────────────────────────────────────────────────────────────
 
@@ -173,10 +242,7 @@ export default function ClassPlayers() {
   const paginatedPlayers = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
-    return players.slice(
-      startIndex,
-      startIndex + ITEMS_PER_PAGE,
-    );
+    return players.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [players, currentPage]);
 
   useEffect(() => {
@@ -215,14 +281,16 @@ export default function ClassPlayers() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classroomId]);
 
-  // ─── Add Student ───────────────────────────────────────────────────────────
+  // ─── Add Student(s) ────────────────────────────────────────────────────────
+
+  const validNames = studentNames.map((n) => n.trim()).filter(Boolean);
 
   const handleAddStudent = () => {
     setShowAddModal(true);
   };
 
   const resetAddStudentForm = () => {
-    setStudentName("");
+    setStudentNames([""]);
     setSubmitError(null);
   };
 
@@ -231,11 +299,23 @@ export default function ClassPlayers() {
     resetAddStudentForm();
   };
 
+  const addNameField = () => {
+    setStudentNames((prev) => [...prev, ""]);
+  };
+
+  const updateNameField = (index: number, value: string) => {
+    setStudentNames((prev) => prev.map((n, i) => (i === index ? value : n)));
+  };
+
+  const removeNameField = (index: number) => {
+    setStudentNames((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmitAddStudent = async () => {
     if (!classroomId) return;
 
-    if (!studentName.trim()) {
-      setSubmitError("Please enter a student name.");
+    if (validNames.length === 0) {
+      setSubmitError("Please enter at least one student name.");
       return;
     }
 
@@ -243,8 +323,8 @@ export default function ClassPlayers() {
       setSubmitting(true);
       setSubmitError(null);
 
-      await addStudents({
-        studentName: studentName.trim(),
+      await addStudentsBulk({
+        studentNames: validNames,
         classroomId,
       });
 
@@ -252,9 +332,9 @@ export default function ClassPlayers() {
 
       await fetchPlayers();
     } catch (error) {
-      console.error("Failed to add student:", error);
+      console.error("Failed to add students:", error);
 
-      setSubmitError("Failed to add student. Please try again.");
+      setSubmitError("Failed to add students. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -265,7 +345,6 @@ export default function ClassPlayers() {
   return (
     <DefaultLayout>
       <div className="space-y-6">
-
         {/* Return Navigation */}
         <div>
           <Button
@@ -309,11 +388,9 @@ export default function ClassPlayers() {
           <LoadingSkeleton />
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
-
                 <thead>
                   <tr className="bg-[#F8FAFC] border-b border-gray-200">
                     <th className="py-4 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">
@@ -384,11 +461,7 @@ export default function ClassPlayers() {
                   ) : (
                     paginatedPlayers.map((player) => (
                       <tr
-                        key={
-                          player.id ??
-                          player.studentId ??
-                          player.username
-                        }
+                        key={player.id ?? player.studentId ?? player.username}
                         className="hover:bg-emerald-50/50 transition-colors"
                       >
                         {/* Student ID */}
@@ -398,16 +471,26 @@ export default function ClassPlayers() {
 
                         {/* Student Name */}
                         <td className="py-3 px-4 font-medium text-gray-900 whitespace-nowrap">
-                          {player.studentName || "—"}
+                          <div className="flex items-center gap-2">
+                            <span>{player.studentName || "—"}</span>
+
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(player)}
+                              className="text-gray-400 hover:text-emerald-600 p-1 rounded-md hover:bg-emerald-50 transition-colors"
+                              aria-label={`Edit name of ${player.studentName || "student"}`}
+                              title="Edit name"
+                            >
+                              <PencilSquareIcon className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
 
                         {/* IGN */}
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs shrink-0">
-                              {player.username
-                                ?.charAt(0)
-                                .toUpperCase() ?? "?"}
+                              {player.username?.charAt(0).toUpperCase() ?? "?"}
                             </div>
 
                             <span className="font-medium text-gray-900">
@@ -429,48 +512,32 @@ export default function ClassPlayers() {
                             <BinPill
                               icon="🟤"
                               label="Bio"
-                              correct={
-                                player.biodegradable?.correct ?? 0
-                              }
-                              wrong={
-                                player.biodegradable?.wrong ?? 0
-                              }
+                              correct={player.biodegradable?.correct ?? 0}
+                              wrong={player.biodegradable?.wrong ?? 0}
                               color="bg-amber-50 border-amber-200 text-amber-700"
                             />
 
                             <BinPill
                               icon="🔵"
                               label="Recycle"
-                              correct={
-                                player.recyclable?.correct ?? 0
-                              }
-                              wrong={
-                                player.recyclable?.wrong ?? 0
-                              }
+                              correct={player.recyclable?.correct ?? 0}
+                              wrong={player.recyclable?.wrong ?? 0}
                               color="bg-blue-50 border-blue-200 text-blue-700"
                             />
 
                             <BinPill
                               icon="⚫"
                               label="Residual"
-                              correct={
-                                player.residual?.correct ?? 0
-                              }
-                              wrong={
-                                player.residual?.wrong ?? 0
-                              }
+                              correct={player.residual?.correct ?? 0}
+                              wrong={player.residual?.wrong ?? 0}
                               color="bg-gray-50 border-gray-200 text-gray-600"
                             />
 
                             <BinPill
                               icon="🟠"
                               label="Special"
-                              correct={
-                                player.specialWaste?.correct ?? 0
-                              }
-                              wrong={
-                                player.specialWaste?.wrong ?? 0
-                              }
+                              correct={player.specialWaste?.correct ?? 0}
+                              wrong={player.specialWaste?.wrong ?? 0}
                               color="bg-pink-50 border-pink-200 text-pink-700"
                             />
                           </div>
@@ -494,9 +561,7 @@ export default function ClassPlayers() {
                         {/* Coins */}
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-1">
-                            <span className="text-yellow-500">
-                              🪙
-                            </span>
+                            <span className="text-yellow-500">🪙</span>
 
                             <span className="font-semibold text-gray-900">
                               {player.envirocoins || 0}
@@ -533,21 +598,14 @@ export default function ClassPlayers() {
               ) : (
                 paginatedPlayers.map((player) => (
                   <div
-                    key={
-                      player.id ??
-                      player.studentId ??
-                      player.username
-                    }
+                    key={player.id ?? player.studentId ?? player.username}
                     className="p-4 bg-white"
                   >
-
                     {/* Mobile Header */}
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm shrink-0">
-                          {player.username
-                            ?.charAt(0)
-                            .toUpperCase() ?? "?"}
+                          {player.username?.charAt(0).toUpperCase() ?? "?"}
                         </div>
 
                         <div>
@@ -555,23 +613,31 @@ export default function ClassPlayers() {
                             {player.username || "Unknown"}
                           </h3>
 
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {player.studentName || "—"}{" "}
-                            {player.studentId
-                              ? `· ID: ${player.studentId}`
-                              : ""}
+                          <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                            <span>
+                              {player.studentName || "—"}{" "}
+                              {player.studentId
+                                ? `· ID: ${player.studentId}`
+                                : ""}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(player)}
+                              className="text-gray-400 hover:text-emerald-600 p-0.5 rounded"
+                              aria-label={`Edit name of ${player.studentName || "student"}`}
+                            >
+                              <PencilSquareIcon className="w-3.5 h-3.5" />
+                            </button>
                           </p>
                         </div>
                       </div>
 
-                      <AccuracyBadge
-                        value={player.accuracyPercentage ?? 0}
-                      />
+                      <AccuracyBadge value={player.accuracyPercentage ?? 0} />
                     </div>
 
                     {/* Mobile Stats Grid */}
                     <div className="grid grid-cols-4 gap-2 py-3 border-y border-gray-100 mb-3 bg-gray-50/50 rounded-lg px-2">
-
                       <div className="text-center">
                         <span className="block text-[10px] text-gray-500 uppercase font-medium">
                           Pre-test
@@ -608,9 +674,7 @@ export default function ClassPlayers() {
                         </span>
 
                         <div className="flex items-center justify-center gap-1 mt-0.5">
-                          <span className="text-yellow-500 text-xs">
-                            🪙
-                          </span>
+                          <span className="text-yellow-500 text-xs">🪙</span>
 
                           <span className="text-sm font-semibold text-gray-700">
                             {player.envirocoins || 0}
@@ -624,48 +688,32 @@ export default function ClassPlayers() {
                       <BinPill
                         icon="🟤"
                         label="Bio"
-                        correct={
-                          player.biodegradable?.correct ?? 0
-                        }
-                        wrong={
-                          player.biodegradable?.wrong ?? 0
-                        }
+                        correct={player.biodegradable?.correct ?? 0}
+                        wrong={player.biodegradable?.wrong ?? 0}
                         color="bg-amber-50 border-amber-200 text-amber-700"
                       />
 
                       <BinPill
                         icon="🔵"
                         label="Recycle"
-                        correct={
-                          player.recyclable?.correct ?? 0
-                        }
-                        wrong={
-                          player.recyclable?.wrong ?? 0
-                        }
+                        correct={player.recyclable?.correct ?? 0}
+                        wrong={player.recyclable?.wrong ?? 0}
                         color="bg-blue-50 border-blue-200 text-blue-700"
                       />
 
                       <BinPill
                         icon="⚫"
                         label="Residual"
-                        correct={
-                          player.residual?.correct ?? 0
-                        }
-                        wrong={
-                          player.residual?.wrong ?? 0
-                        }
+                        correct={player.residual?.correct ?? 0}
+                        wrong={player.residual?.wrong ?? 0}
                         color="bg-gray-50 border-gray-200 text-gray-600"
                       />
 
                       <BinPill
                         icon="🟣"
                         label="Special"
-                        correct={
-                          player.specialWaste?.correct ?? 0
-                        }
-                        wrong={
-                          player.specialWaste?.wrong ?? 0
-                        }
+                        correct={player.specialWaste?.correct ?? 0}
+                        wrong={player.specialWaste?.wrong ?? 0}
                         color="bg-pink-50 border-pink-200 text-pink-700"
                       />
                     </div>
@@ -677,7 +725,6 @@ export default function ClassPlayers() {
             {/* Pagination */}
             {players.length > 0 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-200 bg-white">
-
                 {/* Showing Count */}
                 <p className="text-sm text-gray-500">
                   Showing{" "}
@@ -686,10 +733,7 @@ export default function ClassPlayers() {
                   </span>{" "}
                   to{" "}
                   <span className="font-medium text-gray-700">
-                    {Math.min(
-                      currentPage * ITEMS_PER_PAGE,
-                      players.length,
-                    )}
+                    {Math.min(currentPage * ITEMS_PER_PAGE, players.length)}
                   </span>{" "}
                   of{" "}
                   <span className="font-medium text-gray-700">
@@ -704,9 +748,7 @@ export default function ClassPlayers() {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setCurrentPage((page) =>
-                        Math.max(page - 1, 1),
-                      )
+                      setCurrentPage((page) => Math.max(page - 1, 1))
                     }
                     disabled={currentPage === 1}
                   >
@@ -721,9 +763,7 @@ export default function ClassPlayers() {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setCurrentPage((page) =>
-                        Math.min(page + 1, totalPages),
-                      )
+                      setCurrentPage((page) => Math.min(page + 1, totalPages))
                     }
                     disabled={currentPage === totalPages}
                   >
@@ -735,15 +775,85 @@ export default function ClassPlayers() {
           </div>
         )}
 
+        {/* Edit Student Name Modal */}
+        {editingPlayer && (
+          <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Edit Student Name
+                </h2>
+
+                <button
+                  onClick={closeEditModal}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-500 mb-6">
+                Change the name for student ID{" "}
+                <span className="font-mono">
+                  {editingPlayer.studentId || "—"}
+                </span>
+                .
+              </p>
+
+              <div className="space-y-2">
+                <Input
+                  placeholder="e.g. Jane Doe"
+                  size="md"
+                  fullWidth
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSubmitEditName();
+                  }}
+                  autoFocus
+                />
+
+                {editError && (
+                  <p className="text-sm text-red-500 flex items-center gap-1">
+                    <span className="text-xs">⚠️</span>
+                    {editError}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="flex-1"
+                  onClick={closeEditModal}
+                  disabled={editSubmitting}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="flex-1"
+                  onClick={handleSubmitEditName}
+                  disabled={editSubmitting || !editName.trim()}
+                >
+                  {editSubmitting ? "Saving..." : "Save"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add Student Modal */}
         {showAddModal && (
           <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-
               {/* Modal Header */}
               <div className="flex justify-between items-center mb-2">
                 <h2 className="text-xl font-bold text-gray-900">
-                  Add New Student
+                  Add New Students
                 </h2>
 
                 <button
@@ -755,21 +865,46 @@ export default function ClassPlayers() {
               </div>
 
               <p className="text-sm text-gray-500 mb-6">
-                Enter the student's name to add them to this classroom.
+                Enter the names of the students to add to this classroom.
               </p>
 
-              {/* Input */}
-              <div className="space-y-2">
-                <Input
-                  placeholder="e.g. Jane Doe"
-                  size="md"
-                  fullWidth
-                  value={studentName}
-                  onChange={(e) =>
-                    setStudentName(e.target.value)
-                  }
-                  autoFocus
-                />
+              {/* Inputs */}
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+                {studentNames.map((name, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      placeholder={`Student ${index + 1} name, e.g. Jane Doe`}
+                      size="md"
+                      fullWidth
+                      value={name}
+                      onChange={(e) => updateNameField(index, e.target.value)}
+                      autoFocus={index === studentNames.length - 1}
+                    />
+
+                    {studentNames.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeNameField(index)}
+                        disabled={submitting}
+                        className="text-gray-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors shrink-0"
+                        aria-label={`Remove student ${index + 1}`}
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={addNameField}
+                  disabled={submitting}
+                  className="w-full"
+                >
+                  <PlusIcon className="w-4 h-4 mr-1" />
+                  Add another student
+                </Button>
 
                 {submitError && (
                   <p className="text-sm text-red-500 flex items-center gap-1">
@@ -796,11 +931,13 @@ export default function ClassPlayers() {
                   size="md"
                   className="flex-1"
                   onClick={handleSubmitAddStudent}
-                  disabled={
-                    submitting || !studentName.trim()
-                  }
+                  disabled={submitting || validNames.length === 0}
                 >
-                  {submitting ? "Adding..." : "Add Student"}
+                  {submitting
+                    ? "Adding..."
+                    : validNames.length > 1
+                      ? `Add ${validNames.length} Students`
+                      : "Add Student"}
                 </Button>
               </div>
             </div>
