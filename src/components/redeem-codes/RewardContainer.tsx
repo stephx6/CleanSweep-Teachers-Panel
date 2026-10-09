@@ -1,5 +1,10 @@
 import { useState } from "react";
+
 import MaleRacoon from "../../assets/cosmetics/male racoon.png";
+import FemaleRacoon from "../../assets/cosmetics/female raccoon.png";
+import TrashToCash from "../../assets/cosmetics/trashtocash.png";
+import Tuxedo from "../../assets/cosmetics/tuxedo.png";
+
 import type { RedeemCode } from "../../api/redeemCodeApi";
 
 type RewardContainerProps = {
@@ -8,7 +13,31 @@ type RewardContainerProps = {
   creatingId?: string | null;
 };
 
-const getRewardTitle = (redeemCode: RedeemCode) => {
+type RewardImage = {
+  id: string;
+  image: string;
+};
+
+const images: RewardImage[] = [
+  {
+    id: "TESTWHOLE",
+    image: MaleRacoon,
+  },
+  {
+    id: "racoonf",
+    image: FemaleRacoon,
+  },
+  {
+    id: "trashtocash",
+    image: TrashToCash,
+  },
+  {
+    id: "tuxedo",
+    image: Tuxedo,
+  },
+];
+
+const getRewardTitle = (redeemCode: RedeemCode): string => {
   const rewardTypes = Object.keys(redeemCode.rewards);
 
   if (rewardTypes.length === 0) {
@@ -25,13 +54,17 @@ export function RewardContainer({
 }: RewardContainerProps) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const handleCopy = async (code: string) => {
+  const handleCopy = async (code: string): Promise<void> => {
     try {
       await navigator.clipboard.writeText(code);
+
       setCopiedCode(code);
-      // Clear the label after 1.5s (only if it's still showing this code)
+
+      // Clear the label after 1.5 seconds if it still shows this code.
       setTimeout(() => {
-        setCopiedCode((current) => (current === code ? null : current));
+        setCopiedCode((current) =>
+          current === code ? null : current
+        );
       }, 1500);
     } catch (err) {
       console.error("Failed to copy code:", err);
@@ -43,6 +76,10 @@ export function RewardContainer({
       {redeemCodes.map((redeemCode) => {
         const isCreating = creatingId === redeemCode.id;
 
+        const rewardImage = images.find(
+          (item) => item.id === redeemCode.id
+        );
+
         return (
           <div
             key={redeemCode.id}
@@ -53,8 +90,8 @@ export function RewardContainer({
               <div className="flex justify-center items-center h-32 shrink-0">
                 <img
                   className="w-32 h-32 object-contain"
-                  src={MaleRacoon}
-                  alt="reward"
+                  src={rewardImage?.image ?? MaleRacoon}
+                  alt={redeemCode.id}
                 />
               </div>
 
@@ -118,7 +155,11 @@ export function RewardContainer({
                       <button
                         type="button"
                         className="flex items-center gap-1 text-[#16A34A] hover:text-[#14532D] transition-colors shrink-0 ml-2"
-                        title={copiedCode === code ? "Copied!" : "Copy code"}
+                        title={
+                          copiedCode === code
+                            ? "Copied!"
+                            : "Copy code"
+                        }
                         onClick={() => handleCopy(code)}
                       >
                         {copiedCode === code ? (
@@ -126,6 +167,7 @@ export function RewardContainer({
                             <span className="text-[10px] font-medium">
                               Copied!
                             </span>
+
                             {/* Check Icon */}
                             <svg
                               className="w-3.5 h-3.5"
@@ -184,6 +226,7 @@ export function RewardContainer({
                     />
                   </svg>
                 )}
+
                 {isCreating ? "Generating..." : "Generate Code"}
               </button>
             </div>
